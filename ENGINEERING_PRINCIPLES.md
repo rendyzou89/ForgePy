@@ -1,0 +1,96 @@
+# ForgePy Engineering Principles
+
+This document defines how ForgePy should evolve. It describes engineering expectations, not additional implemented features. Repository behavior remains authoritative when documentation and code disagree.
+
+## ForgePy Philosophy
+
+ForgePy should make project setup repeatable without hiding the work it performs. A generated project should begin from useful, understandable defaults and remain ordinary Python code that its owner can inspect and change.
+
+The project favors:
+
+- **Clarity over cleverness:** prefer direct control flow and explicit registrations.
+- **Focused automation:** automate a complete, visible setup sequence without turning ForgePy into a general build system.
+- **Safe evolution:** improve one boundary at a time and preserve established CLI and template behavior.
+- **Evidence over aspiration:** document implemented behavior as current and label proposals as planned or exploratory.
+- **Ownership after generation:** generated files belong to the user; changes to generated output must be deliberate and reviewable.
+
+## Design Principles
+
+### Keep boundaries explicit
+
+- `cli/` owns parsing, command selection, and command-level validation.
+- `core/ProjectGenerator` owns project-generation sequencing.
+- Builders and core tooling services own focused side effects.
+- `templates/` owns rendered content and template registration.
+- `models/` carries project data; `config/` provides metadata and defaults.
+
+Dependencies should follow those boundaries. Templates and builders must not depend back on the CLI.
+
+### Separate decisions, content, and side effects
+
+Template selection belongs to `TemplateRegistry`, content construction belongs to template functions, and disk writes belong to builders. CLI prompting must not leak into builders or templates.
+
+### Prefer small contracts
+
+Extend commands through `Command.execute()` and templates through `BaseTemplate`. Keep inputs explicit, use type hints, and pass `pathlib.Path` objects at file-system boundaries.
+
+### Preserve compatibility intentionally
+
+The no-command interactive create flow, the `create`, `list`, and `version` commands, the `basic` template name, and the existing generated layout are compatibility-sensitive. Change them only through an explicit requirement with tests or documented migration verification.
+
+### Make side effects visible
+
+Environment creation, package installation, Git initialization, and VS Code generation are observable lifecycle stages. New side effects must have clear ownership, failure behavior, and user-facing status.
+
+### Keep portability claims evidence-based
+
+The current implementation uses Windows virtual-environment executable paths. Do not claim broader platform support until paths and lifecycle behavior have been implemented and verified there.
+
+### Prefer incremental change
+
+Avoid speculative abstractions, unrelated cleanup, and large refactors. Add a new layer only when an implemented requirement needs it and the dependency direction remains clear.
+
+## Definition of Done
+
+A change is done only when all applicable items are true:
+
+- [ ] The requested behavior and acceptance criteria are satisfied.
+- [ ] The change stays within the established architectural boundaries, or an approved architectural change is documented.
+- [ ] Existing CLI behavior, template names, and generated output remain compatible unless the change explicitly revises them.
+- [ ] Python changes follow PEP 8, use appropriate type hints, `pathlib.Path`, and explicit UTF-8 text I/O.
+- [ ] Tests cover the change, or supported manual verification is documented where no automated test infrastructure exists.
+- [ ] Side effects and failure paths have been considered and verified in proportion to risk.
+- [ ] User-facing behavior and architectural documentation are updated when affected.
+- [ ] `git diff --check` passes and the final diff contains no unrelated changes, generated artifacts, or secrets.
+- [ ] The pull request explains assumptions, verification results, compatibility impact, and known limitations.
+
+## Code Review Checklist
+
+Reviewers should confirm:
+
+- [ ] The change solves the stated problem without expanding scope unnecessarily.
+- [ ] CLI parsing, orchestration, builders, templates, configuration, and models retain clear responsibilities.
+- [ ] Dependency flow remains inward and no avoidable circular dependency is introduced.
+- [ ] External commands and file writes have explicit paths, predictable failures, and appropriate user feedback.
+- [ ] Unknown, empty, existing-path, and missing-tool cases are considered where relevant.
+- [ ] Compatibility-sensitive behavior is preserved or intentionally documented.
+- [ ] Tests are focused and isolate file-system and subprocess effects; otherwise manual evidence is adequate and reproducible.
+- [ ] Names, types, imports, encoding, and formatting follow repository conventions.
+- [ ] The diff contains no unrelated refactor, sensitive value, or generated environment artifact.
+
+## Documentation Checklist
+
+When behavior or structure changes, confirm:
+
+- [ ] Current behavior and planned behavior are clearly distinguished.
+- [ ] CLI commands and examples use syntax the repository actually supports.
+- [ ] Architecture diagrams, directory trees, lifecycle steps, and module responsibilities match the code.
+- [ ] Version statements distinguish the stable Git tag from runtime or source-header metadata.
+- [ ] Platform and Python support claims are backed by repository configuration or verification.
+- [ ] `PROJECT_CONTEXT.md` and `ROADMAP.md` reflect material changes to current work or priorities.
+- [ ] `CONTRIBUTING.md` reflects any new setup, test, or review requirement.
+- [ ] Links, headings, code fences, and lists render correctly in GitHub Markdown.
+
+## Decision Rule
+
+When principles conflict, protect user data and repository history first, preserve current behavior second, maintain architectural clarity third, and optimize convenience only after those concerns are satisfied. Stop and request direction when the product choice remains ambiguous.
