@@ -1,22 +1,20 @@
-from core.project_generator import ProjectGenerator
+"""
+==================================================
+ForgePy
+Version : v0.7.2
+Module  : Application Entry Point
+==================================================
+"""
+
+from cli.dispatcher import Dispatcher
+from cli.parser import Parser
 
 
 def main() -> None:
+    parser = Parser()
+    args = parser.parse()
 
-    print("=" * 40)
-    print(" ForgePy ")
-    print("=" * 40)
-
-    project_name = input("Project Name : ").strip()
-    location = input("Location : ").strip()
-
-    generator = ProjectGenerator()
-
-    generator.create(
-        project_name=project_name,
-        location=location,
-        template_name="basic",
-    )
+    Dispatcher().dispatch(args)
 
 
 if __name__ == "__main__":
