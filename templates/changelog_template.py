@@ -1,13 +1,15 @@
 """
 ==================================================
 ForgePy
-Requirements Template
+Changelog Template
 ==================================================
 """
 
 
-def get_requirements() -> str:
-    return """PySide6
-pandas
-openpyxl
+def get_changelog() -> str:
+    return """# Changelog
+
+## v1.0.0
+
+- Initial project created by ForgePy
 """

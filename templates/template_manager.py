@@ -1,20 +1,58 @@
-from templates.app_template import build as build_app
-from templates.readme_template import build as build_readme
-from templates.gitignore_template import build as build_gitignore
-from templates.requirements_template import build as build_requirements
+"""
+==================================================
+ForgePy
+Template Manager
+==================================================
+"""
+
+from templates.app_template import get_app
+from templates.gitignore_template import get_gitignore
+from templates.readme_template import get_readme
+from templates.requirements_template import get_requirements
+
+from templates.license_template import get_license
+from templates.changelog_template import get_changelog
+from templates.env_template import (
+    get_env,
+    get_env_example,
+)
+from templates.pyproject_template import get_pyproject
 
 
 class TemplateManager:
-    """Mengelola seluruh template project."""
 
-    def get_app(self, project_name: str) -> str:
-        return build_app(project_name)
-
-    def get_readme(self, project_name: str) -> str:
-        return build_readme(project_name)
+    def get_app(
+        self,
+        project_name: str,
+    ) -> str:
+        return get_app(project_name)
 
     def get_gitignore(self) -> str:
-        return build_gitignore()
+        return get_gitignore()
+
+    def get_readme(
+        self,
+        project_name: str,
+    ) -> str:
+        return get_readme(project_name)
 
     def get_requirements(self) -> str:
-        return build_requirements()
+        return get_requirements()
+
+    def get_license(self) -> str:
+        return get_license()
+
+    def get_changelog(self) -> str:
+        return get_changelog()
+
+    def get_env(self) -> str:
+        return get_env()
+
+    def get_env_example(self) -> str:
+        return get_env_example()
+
+    def get_pyproject(
+        self,
+        project_name: str,
+    ) -> str:
+        return get_pyproject(project_name)

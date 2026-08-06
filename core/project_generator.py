@@ -1,0 +1,84 @@
+from pathlib import Path
+
+from builders.python_tools_builder import PythonToolsBuilder
+
+from core.environment_builder import EnvironmentBuilder
+from core.git_builder import GitBuilder
+from core.requirements_installer import RequirementsInstaller
+from core.vscode_builder import VSCodeBuilder
+
+from models.project_config import ProjectConfig
+
+from templates.template_engine.template_registry import TemplateRegistry
+
+
+class ProjectGenerator:
+
+    def create(
+        self,
+        project_name: str,
+        location: str,
+        template_name: str = "basic",
+    ) -> None:
+
+        location_path = Path(location).resolve()
+
+        if not location_path.exists():
+            print(f"[ERROR] Folder '{location_path}' tidak ditemukan.")
+            return
+
+        config = ProjectConfig(
+            name=project_name,
+            location=location_path,
+        )
+
+        config.root.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
+        # ==========================
+        # Template
+        # ==========================
+
+        registry = TemplateRegistry()
+
+        template = registry.get(template_name)
+
+        template.create(config.root)
+
+        # ==========================
+        # Virtual Environment
+        # ==========================
+
+        EnvironmentBuilder().create(config.root)
+
+        # ==========================
+        # Update Python Tools
+        # ==========================
+
+        PythonToolsBuilder().update(config.root)
+
+        # ==========================
+        # Install Requirements
+        # ==========================
+
+        RequirementsInstaller().install(config.root)
+
+        # ==========================
+        # Git
+        # ==========================
+
+        GitBuilder().create(config.root)
+
+        # ==========================
+        # VSCode
+        # ==========================
+
+        VSCodeBuilder().create(config.root)
+
+        print()
+        print("=" * 40)
+        print("Project berhasil dibuat.")
+        print(config.root)
+        print("=" * 40)

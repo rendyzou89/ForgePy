@@ -1,15 +1,32 @@
+"""
+==================================================
+ForgePy
+Version : v0.6.4
+Module  : File Builder
+==================================================
+"""
+
 from pathlib import Path
 
+from builders.base_builder import BaseBuilder
 
-class FileBuilder:
-    """
-    Bertanggung jawab membuat file beserta isinya.
-    """
 
-    def write(self, file_path: Path, content: str) -> None:
-        file_path.write_text(
-            content,
-            encoding="utf-8"
+class FileBuilder(BaseBuilder):
+
+    def write(
+        self,
+        path: Path,
+        content: str,
+    ) -> None:
+
+        path.parent.mkdir(
+            parents=True,
+            exist_ok=True,
         )
 
-        print(f"[OK] File dibuat : {file_path}")
+        path.write_text(
+            content,
+            encoding="utf-8",
+        )
+
+        print(f"[OK] File dibuat : {path}")

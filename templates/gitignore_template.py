@@ -1,4 +1,11 @@
-def build() -> str:
+"""
+==================================================
+ForgePy
+GitIgnore Template
+==================================================
+"""
+
+def get_gitignore() -> str:
     return """__pycache__/
 *.pyc
 *.pyo
