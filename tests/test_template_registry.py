@@ -10,6 +10,7 @@ from cli.commands.list_command import ListCommand
 from cli.dispatcher import Dispatcher
 from cli.parser import Parser
 from templates.basic.basic_template import BasicTemplate
+from templates.library.library_template import LibraryTemplate
 from templates.template_engine.base_template import BaseTemplate
 from templates.template_engine.template_metadata import TemplateMetadata
 from templates.template_engine.template_registry import TemplateRegistry
@@ -161,7 +162,11 @@ class TemplateRegistryTests(unittest.TestCase):
         self.assertIs(registry.get_metadata("example"), metadata)
         self.assertEqual(
             registry.list_metadata(),
-            (BasicTemplate().metadata, metadata),
+            (
+                BasicTemplate().metadata,
+                LibraryTemplate().metadata,
+                metadata,
+            ),
         )
 
     def test_preserves_legacy_template_listing_contract(self) -> None:
@@ -169,9 +174,11 @@ class TemplateRegistryTests(unittest.TestCase):
 
         templates = registry.list_templates()
 
-        self.assertEqual(tuple(templates), ("basic",))
+        self.assertEqual(tuple(templates), ("basic", "library"))
         self.assertIsInstance(templates["basic"], BasicTemplate)
+        self.assertIsInstance(templates["library"], LibraryTemplate)
         self.assertIs(registry.get("basic"), templates["basic"])
+        self.assertIs(registry.get("library"), templates["library"])
 
     def test_template_views_cannot_desynchronize_registry_state(self) -> None:
         registry = TemplateRegistry()
@@ -184,8 +191,11 @@ class TemplateRegistryTests(unittest.TestCase):
             registry.get_metadata("basic"),
             BasicTemplate().metadata,
         )
-        self.assertEqual(tuple(registry.list_templates()), ("basic",))
-        self.assertEqual(len(registry.list_metadata()), 1)
+        self.assertEqual(
+            tuple(registry.list_templates()),
+            ("basic", "library"),
+        )
+        self.assertEqual(len(registry.list_metadata()), 2)
 
     def test_rejects_duplicate_metadata_name(self) -> None:
         registry = TemplateRegistry()
@@ -200,7 +210,7 @@ class TemplateRegistryTests(unittest.TestCase):
             )
 
         self.assertIs(registry.get("basic"), original)
-        self.assertEqual(len(registry.list_metadata()), 1)
+        self.assertEqual(len(registry.list_metadata()), 2)
 
     def test_rejects_template_with_empty_name(self) -> None:
         registry = TemplateRegistry()
@@ -211,7 +221,10 @@ class TemplateRegistryTests(unittest.TestCase):
         ):
             registry.register(EmptyNameTemplate())
 
-        self.assertEqual(tuple(registry.list_templates()), ("basic",))
+        self.assertEqual(
+            tuple(registry.list_templates()),
+            ("basic", "library"),
+        )
 
     def test_rejects_invalid_metadata_registration(self) -> None:
         registry = TemplateRegistry()
@@ -222,7 +235,10 @@ class TemplateRegistryTests(unittest.TestCase):
         ):
             registry.register(InvalidMetadataTemplate())
 
-        self.assertEqual(tuple(registry.list_templates()), ("basic",))
+        self.assertEqual(
+            tuple(registry.list_templates()),
+            ("basic", "library"),
+        )
 
     def test_rejects_object_that_is_not_a_template(self) -> None:
         registry = TemplateRegistry()
@@ -233,7 +249,10 @@ class TemplateRegistryTests(unittest.TestCase):
         ):
             registry.register(object())  # type: ignore[arg-type]
 
-        self.assertEqual(tuple(registry.list_templates()), ("basic",))
+        self.assertEqual(
+            tuple(registry.list_templates()),
+            ("basic", "library"),
+        )
 
     def test_rejects_template_and_metadata_name_mismatch(self) -> None:
         registry = TemplateRegistry()
@@ -282,6 +301,7 @@ class ListCommandMetadataTests(unittest.TestCase):
                 " ForgePy Templates ",
                 "=" * 40,
                 "- basic: Basic Python project starter template.",
+                "- library: Reusable Python package template.",
             ],
         )
 
@@ -307,6 +327,10 @@ class ListCommandMetadataTests(unittest.TestCase):
 
         self.assertIn(
             "- basic: Basic Python project starter template.",
+            output.getvalue(),
+        )
+        self.assertIn(
+            "- library: Reusable Python package template.",
             output.getvalue(),
         )
 

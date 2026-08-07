@@ -46,18 +46,33 @@ The Sprint 7 CLI architecture, persistent configuration, its CLI command, and co
 
 Sprint 7 behavior is covered by focused configuration and create-resolution tests; this document does not assign an unrecorded release number.
 
-## In Progress — Sprint 8.1 Template Metadata
+## Implemented — Sprint 8.1 Template Metadata
 
-Sprint 8.1 introduces descriptive metadata as the registry and listing foundation for future templates. It does not add another template or change project generation.
+Sprint 8.1 introduced descriptive metadata as the registry and listing foundation for future templates. Commit `484278a` records this work on the current feature lineage; it is not yet part of `master` and has no newer release tag.
 
-| Area | Current implementation |
+| Area | Sprint 8.1 outcome |
 | --- | --- |
 | Metadata model | Immutable `TemplateMetadata` values contain name, description, template version, author, and tags. |
 | Registration | `TemplateRegistry.register()` validates template and metadata types, non-empty matching names, and uniqueness before preserving a registration. |
 | Listing | `list` reads registry metadata and displays each template name and description. |
-| Compatibility | `basic` remains the only template, its selector remains stable, and its generated output is unchanged. |
+| Compatibility | That milestone added no template: `basic` remained the only template, its selector stayed stable, and its generated output was unchanged. |
 
-Sprint 8.1 completion depends on focused metadata, registry, and list-output tests plus the existing CLI regression suite.
+Sprint 8.1 includes focused metadata, registry, and list-output tests plus the existing CLI regression suite.
+
+## In Progress — Sprint 8.2 Library Template
+
+Sprint 8.2 adds the first additional built-in template without changing the shared generator lifecycle.
+
+| Area | Current implementation |
+| --- | --- |
+| Built-in catalog | `TemplateRegistry` registers `basic` first and `library` second through the existing validated API. |
+| Library metadata | `library` has its own name, description, template revision, author, and tags. |
+| Generated layout | A normalized import-package directory and `tests/` each contain `__init__.py`, alongside a minimal set of shared root files. |
+| Editor compatibility | Built-in templates explicitly declare an `app.py` entry point or no entry point; library VS Code JSON no longer references an absent application file. |
+| Compatibility | The `basic` selector, metadata, generated folders/files, default selection, and existing VS Code behavior remain unchanged. |
+| Verification | Focused tests cover registration, metadata, exact structures, package-name normalization, generator selection, and template-aware VS Code output. |
+
+Sprint 8.2 introduces no further template types, release number, or delivery date.
 
 ## Planned — Stabilization Toward v1.0
 
@@ -77,7 +92,7 @@ These are outcome-oriented priorities, not guaranteed feature commitments.
 ### Compatibility and Support
 
 - Document supported Python and operating-system ranges based on verified behavior.
-- Stabilize the CLI contract, `basic` template name and output, and project-generation lifecycle.
+- Stabilize the CLI contract, the `basic` and `library` template names and outputs, and the project-generation lifecycle.
 - Define a template-metadata version policy before independently evolving template revisions.
 - Provide migration notes for any intentionally incompatible pre-1.0 change.
 
@@ -88,6 +103,6 @@ ForgePy is ready for a v1.0 proposal when the current public behavior is consist
 ## Ideas — Not Scheduled
 
 - Evaluate portability beyond the current Windows-oriented virtual-environment paths.
-- Evaluate additional commands or templates only after a concrete use case and compatibility review.
+- Evaluate further commands or templates beyond `basic` and `library` only after a concrete use case and compatibility review.
 
 Ideas become planned work only after maintainer approval, defined acceptance criteria, and an identified verification approach.
