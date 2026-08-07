@@ -1,7 +1,6 @@
 """
 ==================================================
 ForgePy
-Version : v0.4.0
 Author  : Rendy Zou
 Module  : VSCode Extensions Template
 ==================================================

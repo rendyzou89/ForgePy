@@ -32,7 +32,7 @@ Template selection belongs to `TemplateRegistry`, content construction belongs t
 
 ### Prefer small contracts
 
-Extend commands through `Command.execute()` and templates through `BaseTemplate`. Keep inputs explicit, use type hints, and pass `pathlib.Path` objects at file-system boundaries.
+Extend commands through the shared `Command` metadata and `execute()` contract, override `configure_parser()` when arguments are required, and add built-in commands to the explicit catalog in `cli.commands`. Extend templates through `BaseTemplate`. Keep inputs explicit, use type hints, and pass `pathlib.Path` objects at file-system boundaries.
 
 ### Preserve compatibility intentionally
 
@@ -85,7 +85,7 @@ When behavior or structure changes, confirm:
 - [ ] Current behavior and planned behavior are clearly distinguished.
 - [ ] CLI commands and examples use syntax the repository actually supports.
 - [ ] Architecture diagrams, directory trees, lifecycle steps, and module responsibilities match the code.
-- [ ] Version statements distinguish the stable Git tag from runtime or source-header metadata.
+- [ ] ForgePy version statements match `config/version.py` and the current release tag; generated-project and schema versions are clearly distinguished.
 - [ ] Platform and Python support claims are backed by repository configuration or verification.
 - [ ] `PROJECT_CONTEXT.md` and `ROADMAP.md` reflect material changes to current work or priorities.
 - [ ] `CONTRIBUTING.md` reflects any new setup, test, or review requirement.

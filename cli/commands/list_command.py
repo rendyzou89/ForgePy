@@ -1,7 +1,6 @@
 """
 ==================================================
 ForgePy
-Version : v0.7.2
 Module  : List Command
 ==================================================
 """
@@ -16,6 +15,10 @@ class ListCommand(Command):
     """
     Menampilkan seluruh template yang tersedia.
     """
+
+    name = "list"
+    summary = "List registered project templates."
+    description = "List every project template currently registered in ForgePy."
 
     def execute(self, args: Namespace) -> None:
         del args
