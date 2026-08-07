@@ -2,7 +2,7 @@
 
 ## Overview
 
-ForgePy is a layered command-line application. The CLI parses user input and selects a command, the create command delegates to `ProjectGenerator`, and the generator coordinates template rendering and setup services. Generated content flows from template functions through the template facade into builders that write to disk.
+ForgePy is a layered command-line application. The CLI parses user input and selects a command, the create command delegates to `ProjectGenerator`, and the generator coordinates template rendering and setup services. The template registry keeps descriptive metadata alongside executable templates so listing does not invoke generation. Generated content flows from template functions through the template facade into builders that write to disk.
 
 ## Directory structure
 
@@ -19,7 +19,7 @@ ForgePy/
 |-- models/                   Project configuration data model
 |-- templates/                Generated file content and template facade
 |   |-- basic/                Basic project template implementation
-|   |-- template_engine/      Template contract, registry, and file mapping
+|   |-- template_engine/      Template contract, metadata, registry, and file mapping
 |   `-- vscode/               VS Code JSON content generators
 |-- utils/                    Reserved utility package; logger is currently empty
 |-- main.py                   Application entry point
@@ -54,20 +54,24 @@ ForgePy/
 | `core/git_builder.py` | Initializes Git, stages files, and attempts the initial commit. |
 | `core/vscode_builder.py` | Writes `.vscode` configuration files. |
 | `builders/` | Creates folders/files and upgrades Python packaging tools. |
-| `templates/template_engine/` | Defines, registers, and supplies project templates. |
+| `templates/template_engine/base_template.py` | Defines the stable template name, metadata, and creation contracts. |
+| `templates/template_engine/template_metadata.py` | Defines immutable descriptive metadata for registered templates. |
+| `templates/template_engine/template_registry.py` | Registers templates by metadata name and supplies template and metadata lookups. |
+| `templates/template_engine/template_files.py` | Maps generated root-file names to rendered content. |
 | `templates/template_manager.py` | Provides one facade over generated root-file content. |
 | `config/default_structure.py` | Supplies the basic generated-project directory list. |
 | `config/user_config.py` | Loads, validates, updates, resets, and atomically saves user-level JSON configuration. |
 | `config/version.py` | Supplies canonical application metadata. |
 | `tests/test_config_command.py` | Verifies configuration parsing, dispatch, output, persistence, reset, and error handling with an isolated home. |
 | `tests/test_create_command.py` | Verifies create-input precedence, prompting, configuration errors, and generator delegation without generating a project. |
+| `tests/test_template_registry.py` | Verifies metadata, registration, lookup compatibility, and list output without generation or file-system effects. |
 | `tests/test_user_config.py` | Verifies configuration behavior in temporary home directories. |
 
 ## Version Source
 
 `config/version.py` is the canonical source for the ForgePy application version. `VersionCommand` imports `APP_NAME` and `VERSION` from that module and adds the conventional `v` prefix only when displaying the release. Module docstrings do not duplicate release numbers.
 
-Versions rendered into generated projects and version fields required by VS Code JSON schemas are independent of the ForgePy release version.
+Versions rendered into generated projects, template metadata versions, and version fields required by VS Code JSON schemas are independent of the ForgePy release version. The `basic` metadata currently records `0.6.0` as its template revision; this does not make `config/version.py` a template-version source.
 
 ## User Configuration
 
@@ -118,6 +122,7 @@ flowchart TD
     Create --> UserConfig
     Create --> Generator[ProjectGenerator]
     List --> Registry[TemplateRegistry]
+    Registry --> TemplateMetadata[TemplateMetadata]
     Version --> VersionConfig[config.version]
     Config --> UserConfig[ConfigStore]
     UserConfig --> ConfigFile[~/.forgepy/config.json]
@@ -125,6 +130,7 @@ flowchart TD
     Generator --> ProjectConfig[ProjectConfig]
     Generator --> Registry
     Registry --> Basic[BasicTemplate]
+    Basic --> TemplateMetadata
     Basic --> FolderBuilder[FolderBuilder]
     Basic --> TemplateFiles[TemplateFiles.basic]
     TemplateFiles --> TemplateManager[TemplateManager]
@@ -146,15 +152,22 @@ CLI and orchestration layers depend on lower-level services. Template content mo
 - `Command` defines the shared name, help metadata, parser-configuration hook, and execution contract implemented by `CreateCommand`, `ListCommand`, `VersionCommand`, and `ConfigCommand`.
 - `cli.commands.create_commands()` is the single built-in command catalog used by both `Parser` and `Dispatcher`.
 - `Dispatcher` derives its CLI-name mapping from that catalog.
-- `CreateCommand` resolves explicit, persisted, and interactive/default inputs before invoking `ProjectGenerator`; `ListCommand` queries `TemplateRegistry`, `VersionCommand` reads canonical version metadata, and `ConfigCommand` delegates user-setting operations to `ConfigStore`.
+- `CreateCommand` resolves explicit, persisted, and interactive/default inputs before invoking `ProjectGenerator`; `ListCommand` reads descriptive metadata from `TemplateRegistry`, `VersionCommand` reads canonical application-version metadata, and `ConfigCommand` delegates user-setting operations to `ConfigStore`.
 - `ProjectConfig` is a slotted dataclass used by `ProjectGenerator` to derive the target root.
-- `BaseTemplate` is implemented by `BasicTemplate` and stored by `TemplateRegistry`.
+- `TemplateMetadata` is a frozen, slotted dataclass containing `name`, `description`, template `version`, `author`, and immutable `tags`. Construction validates scalar types, rejects empty or whitespace-only names, and snapshots tag iterables as tuples.
+- `BaseTemplate` keeps its stable `name` and `create()` contracts and supplies compatibility metadata for legacy subclasses. `BasicTemplate` overrides that metadata with complete values.
+- `TemplateRegistry.register()` is the single extension path. It accepts only `BaseTemplate` instances with `TemplateMetadata`, rejects empty names, requires `metadata.name` to match `template.name`, and rejects duplicates before changing registry state. It stores the template and metadata together under the authoritative metadata name. `get()` still returns the executable `BaseTemplate`; `get_metadata()` and `list_metadata()` expose descriptive data separately.
+- `list_templates()` and the public `templates` view retain their existing name-to-template dictionary shape for compatibility, but return defensive snapshots so callers cannot desynchronize registry state.
 - `BaseBuilder` is the parent of `FileBuilder`, `FolderBuilder`, and `PythonToolsBuilder`; it currently defines no methods.
 - Core builder-style services are coordinated directly by `ProjectGenerator` and do not inherit from `BaseBuilder`.
 
 ## Template system
 
-The registry currently contains only `"basic": BasicTemplate()`. A lookup returns the instance by dictionary key. `BasicTemplate.create()` performs two stages:
+The registry currently registers only `BasicTemplate`. Registration stores its executable instance and immutable `TemplateMetadata`, both under the stable metadata name `basic`. `get("basic")` still returns the same creatable template type, while `get_metadata()` and `list_metadata()` provide presentation data without invoking `create()`. The legacy `list_templates()` mapping remains available.
+
+The `basic` metadata description is limited to implemented behavior, and its tags identify it as the basic Python template. The template metadata version is separate from the ForgePy application version and the version rendered into a generated project. `ListCommand` displays only metadata name and description.
+
+`BasicTemplate.create()` performs two stages:
 
 1. `FolderBuilder` creates every directory in `config.default_structure.DEFAULT_FOLDERS`.
 2. `TemplateFiles.basic()` renders the root-file mapping, and `FileBuilder` writes each entry as UTF-8.
@@ -181,7 +194,8 @@ flowchart LR
     Resolve -->|project name or location still empty| Prompt[Interactive prompts]
     Prompt --> Resolve
     Resolve --> Generator[ProjectGenerator.create]
-    List --> Registry[TemplateRegistry.list_templates]
+    List --> Registry[TemplateRegistry.list_metadata]
+    Registry --> TemplateInfo[TemplateMetadata name + description]
     Version --> Metadata[config.version + platform]
     Config -->|show / set / reset| Store[ConfigStore]
     Store --> UserFile[~/.forgepy/config.json]
@@ -277,9 +291,10 @@ The current implementation uses Windows executable paths such as `.venv/Scripts/
 ## Known limitations and technical debt
 
 - The full generation lifecycle assumes Windows `.venv/Scripts/*.exe` paths.
-- Automated coverage currently focuses on user configuration, its CLI command, and create-input resolution; the generator lifecycle and other application areas remain uncovered.
+- Automated coverage currently focuses on user configuration, its CLI command, create-input resolution, template metadata, registry behavior, and list output; the generator lifecycle and other application areas remain uncovered.
 - `author` and `license` are persisted but not applied to generated content.
 - `TemplateRegistry.get()` raises `KeyError` for unknown names rather than producing a command-level error.
+- Template metadata has no independent versioning policy yet; the current value records the existing `basic` revision only.
 - Most subprocess failures propagate; only the initial Git commit has local error handling.
 - The generator writes into an existing project root because it uses `exist_ok=True`.
 - `BaseBuilder` has no behavioral contract, and core builder-style services do not share its inheritance hierarchy.
@@ -299,9 +314,10 @@ Apply the design principles and Definition of Done in [`ENGINEERING_PRINCIPLES.m
 
 ### Templates
 
-- Implement `BaseTemplate`, keep rendered content separate from file writes, and register it in `TemplateRegistry`.
+- Implement `BaseTemplate` with `TemplateMetadata`: a non-empty stable `name`; factual string `description`; string template `version` and `author`; and an iterable of string `tags` stored as a tuple.
+- Keep the metadata name aligned with `BaseTemplate.name`, keep rendered content separate from file writes, and register through `TemplateRegistry.register()`.
 - Do not change the `basic` name or output contract incidentally.
-- Verify registry listing, selection, generated folders, and generated files in an isolated location.
+- Verify metadata registration, registry listing and selection, generated folders, and generated files in an isolated location.
 
 ### User Configuration
 

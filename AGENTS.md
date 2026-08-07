@@ -13,7 +13,7 @@ Preserve these boundaries:
 - `cli/` parses and dispatches commands; commands delegate work.
 - `core/ProjectGenerator` owns generation order.
 - `builders/` performs focused file-system or Python-tool operations.
-- `templates/` renders content; `TemplateRegistry` selects `BaseTemplate` implementations.
+- `templates/` owns descriptive template metadata and rendered content; `TemplateRegistry` registers and selects `BaseTemplate` implementations.
 - `models/` carries project data; `config/` owns application metadata, generated-layout defaults, and isolated user-configuration persistence.
 
 Do not silently move responsibilities between these areas or perform broad refactors for a focused change.
@@ -30,7 +30,8 @@ Do not silently move responsibilities between these areas or perform broad refac
 - Follow PEP 8, use Python type hints, `pathlib.Path`, UTF-8 text I/O, four-space indentation, and clear names.
 - Keep CLI parsing in `Parser`, routing in `Dispatcher`, and behavior in `Command` implementations.
 - Keep builders single-purpose; do not add prompting or template selection to builders.
-- Implement templates through `BaseTemplate`, keep rendering separate from writes, and register them explicitly.
+- Implement templates through `BaseTemplate` and expose explicit `TemplateMetadata` with a non-empty stable `name`; string `description`, `version`, and `author`; and an iterable of string `tags` stored as a tuple. Keep rendering separate from writes and register templates through `TemplateRegistry.register()`.
+- Treat metadata as registry and presentation data. Keep its name aligned with the stable template selector, and never let metadata-only changes alter `create()` or generated output.
 - Keep lifecycle sequencing in `ProjectGenerator`; preserve no-command dispatch to `create`, with project-name and unresolved-location prompts unchanged.
 - Resolve create inputs in `CreateCommand` using explicit CLI values, then `default_location`/`default_template`, then the existing prompt/`basic` fallback. Keep `ProjectGenerator`, builders, and templates independent of `ConfigStore`.
 - Do not apply persisted `author` or `license` values to generated files without an explicit requirement.
