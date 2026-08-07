@@ -54,6 +54,31 @@ class ConfigStoreTests(unittest.TestCase):
         )
         self.assertFalse(self.store.config_directory.exists())
 
+    def test_load_wraps_file_system_read_error(self) -> None:
+        self._write_raw_config(
+            json.dumps(
+                {
+                    "author": "Existing Author",
+                }
+            )
+        )
+        original = self.store.config_path.read_bytes()
+
+        with patch(
+            "config.user_config.Path.read_text",
+            side_effect=PermissionError("access denied"),
+        ):
+            with self.assertRaisesRegex(
+                ConfigIOError,
+                "ForgePy could not read configuration",
+            ):
+                self.store.load()
+
+        self.assertEqual(
+            self.store.config_path.read_bytes(),
+            original,
+        )
+
     def test_save_creates_directory_and_round_trips_json(self) -> None:
         config = {
             "default_template": "basic",

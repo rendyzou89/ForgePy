@@ -94,14 +94,13 @@ class ConfigStore:
         Load configuration or return defaults when no file exists.
         """
 
-        if not self.config_path.exists():
-            return self.defaults()
-
         try:
             content = self.config_path.read_text(
                 encoding="utf-8",
             )
             data = json.loads(content)
+        except FileNotFoundError:
+            return self.defaults()
         except UnicodeDecodeError as error:
             raise ConfigFormatError(
                 "ForgePy configuration is not valid UTF-8 at "
