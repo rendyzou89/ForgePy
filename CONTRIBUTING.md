@@ -12,7 +12,7 @@ ForgePy currently uses only the Python standard library and has an empty root `r
 
 Prerequisites are Git, Python with the standard-library `venv` module, and PowerShell for the commands below. The complete generation workflow currently assumes Windows executables under `.venv\Scripts`. The repository does not yet declare a supported Python version range for ForgePy itself.
 
-The generated `basic` project is separate from ForgePy's empty root requirements file: it declares `PySide6`, `pandas`, and `openpyxl`. A full create run also upgrades packaging tools, so it may require network access.
+Generated-project requirements are separate from ForgePy's empty root requirements file. The `basic` template declares `PySide6`, `pandas`, and `openpyxl`; the minimal `library` template writes an empty requirements file. A full create run still upgrades packaging tools, so it may require network access.
 
 ```powershell
 git clone <repository-url>
@@ -85,7 +85,7 @@ Relevant coverage includes:
 - create precedence from explicit location/template arguments through persisted defaults to the existing prompt/`basic` fallback
 - configuration-read failures that abort creation without prompting, generating, or overwriting user data
 - template metadata registration, registry lookup, and list-command output
-- the exact folders and files produced by `BasicTemplate`
+- the exact folders and files produced by each affected built-in template
 - generated text and JSON content
 - subprocess success and failure paths without invoking real package installation or Git operations in unit tests
 - behavior around missing locations, tools, requirements, and virtual environments
@@ -131,7 +131,7 @@ finally {
 }
 ```
 
-`python main.py` and `python main.py create <name> --location <existing-path> --template basic` are also supported, but they start or perform a side-effectful generation lifecycle. Omitted location or template options can read the current user configuration; use both explicit options for a deterministic bypass or isolate `USERPROFILE`. Run generation only with deliberate input in an isolated temporary parent directory because it may build an environment, install packages, and initialize Git.
+`python main.py` and `python main.py create <name> --location <existing-path> --template <basic-or-library>` are also supported, but they start or perform a side-effectful generation lifecycle. Omitted location or template options can read the current user configuration; use both explicit options for a deterministic bypass or isolate `USERPROFILE`. Run generation only with deliberate input in an isolated temporary parent directory because it may build an environment, install packages, and initialize Git.
 
 ## Pull request rules
 
@@ -181,4 +181,4 @@ Before requesting review, confirm:
 
 ## Adding a template
 
-A new template contribution should implement `BaseTemplate`, provide `TemplateMetadata` with a non-empty stable `name`; string `description`, template `version`, and `author`; and an iterable of string `tags` stored as a tuple. Register through `TemplateRegistry.register()`; the metadata name must match the template's selection name and must not duplicate an existing registration. Keep rendered content separate from file writes, add coverage for successful and rejected registration, registry listing, and generated output, and do not change the existing `basic` template contract incidentally.
+A new template contribution should implement `BaseTemplate`, provide `TemplateMetadata` with a non-empty stable `name`; string `description`, template `version`, and `author`; and an iterable of string `tags` stored as a tuple. Register through `TemplateRegistry.register()`; the metadata name must match the template's selection name and must not duplicate an existing registration. Explicitly declare the real `vscode_entry_point`, or `None` when the template has no runnable application file; do not infer it from generated paths. Keep rendered content separate from file writes, add coverage for registration, registry listing, generated output, and template-matched VS Code JSON, and do not change existing built-in template contracts incidentally.

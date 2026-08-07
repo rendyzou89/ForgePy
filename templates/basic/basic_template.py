@@ -35,6 +35,10 @@ class BasicTemplate(BaseTemplate):
     def name(self) -> str:
         return self.metadata.name
 
+    @property
+    def vscode_entry_point(self) -> str | None:
+        return "app.py"
+
     def create(
         self,
         project_path: Path,

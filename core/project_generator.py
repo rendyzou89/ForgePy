@@ -75,7 +75,10 @@ class ProjectGenerator:
         # VSCode
         # ==========================
 
-        VSCodeBuilder().create(config.root)
+        VSCodeBuilder().create(
+            config.root,
+            entry_point=template.vscode_entry_point,
+        )
 
         print()
         print("=" * 40)

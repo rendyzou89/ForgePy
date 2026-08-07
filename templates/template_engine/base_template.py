@@ -36,6 +36,12 @@ class BaseTemplate(ABC):
             tags=(),
         )
 
+    @property
+    def vscode_entry_point(self) -> str | None:
+        """Return the file VS Code should launch for this template."""
+
+        return "app.py"
+
     @abstractmethod
     def create(
         self,

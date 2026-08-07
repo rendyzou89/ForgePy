@@ -7,23 +7,24 @@ Module  : VSCode Tasks Template
 
 Deskripsi:
 - Template tasks.json untuk Visual Studio Code.
-- Menyediakan task menjalankan aplikasi dan install dependencies.
+- Menyediakan task aplikasi jika tersedia dan install dependencies.
 """
 
 import json
 
 
-def build() -> str:
+def build(entry_point: str | None = "app.py") -> str:
 
-    tasks = {
-        "version": "2.0.0",
-        "tasks": [
+    tasks = []
+
+    if entry_point is not None:
+        tasks.append(
             {
                 "label": "Run Application",
                 "type": "shell",
                 "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
                 "args": [
-                    "app.py"
+                    entry_point
                 ],
                 "group": {
                     "kind": "build",
@@ -33,26 +34,33 @@ def build() -> str:
                     "reveal": "always"
                 },
                 "problemMatcher": []
-            },
-            {
-                "label": "Install Requirements",
-                "type": "shell",
-                "command": "${workspaceFolder}\\.venv\\Scripts\\pip.exe",
-                "args": [
-                    "install",
-                    "-r",
-                    "requirements.txt"
-                ],
-                "presentation": {
-                    "reveal": "always"
-                },
-                "problemMatcher": []
             }
-        ]
+        )
+
+    tasks.append(
+        {
+            "label": "Install Requirements",
+            "type": "shell",
+            "command": "${workspaceFolder}\\.venv\\Scripts\\pip.exe",
+            "args": [
+                "install",
+                "-r",
+                "requirements.txt"
+            ],
+            "presentation": {
+                "reveal": "always"
+            },
+            "problemMatcher": []
+        }
+    )
+
+    task_configuration = {
+        "version": "2.0.0",
+        "tasks": tasks,
     }
 
     return json.dumps(
-        tasks,
+        task_configuration,
         indent=4,
         ensure_ascii=False,
     )

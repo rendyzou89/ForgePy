@@ -8,6 +8,7 @@ Template Registry
 from dataclasses import dataclass
 
 from templates.basic.basic_template import BasicTemplate
+from templates.library.library_template import LibraryTemplate
 from templates.template_engine.base_template import BaseTemplate
 from templates.template_engine.template_metadata import TemplateMetadata
 
@@ -25,6 +26,7 @@ class TemplateRegistry:
         self._registrations: dict[str, _TemplateRegistration] = {}
 
         self.register(BasicTemplate())
+        self.register(LibraryTemplate())
 
     @property
     def templates(self) -> dict[str, BaseTemplate]:

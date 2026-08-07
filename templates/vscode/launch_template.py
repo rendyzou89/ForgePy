@@ -7,26 +7,31 @@ Module  : VSCode Launch Template
 
 Deskripsi:
 - Template launch.json untuk Visual Studio Code.
-- Digunakan agar project dapat dijalankan dengan tombol F5.
+- Menambahkan konfigurasi F5 hanya jika template memiliki entry point.
 """
 
 import json
 
 
-def build() -> str:
+def build(entry_point: str | None = "app.py") -> str:
 
-    launch = {
-        "version": "0.2.0",
-        "configurations": [
+    configurations = []
+
+    if entry_point is not None:
+        configurations.append(
             {
-                "name": "Python: app.py",
+                "name": f"Python: {entry_point}",
                 "type": "debugpy",
                 "request": "launch",
-                "program": "${workspaceFolder}/app.py",
+                "program": f"${{workspaceFolder}}/{entry_point}",
                 "console": "integratedTerminal",
                 "justMyCode": True,
             }
-        ],
+        )
+
+    launch = {
+        "version": "0.2.0",
+        "configurations": configurations,
     }
 
     return json.dumps(
