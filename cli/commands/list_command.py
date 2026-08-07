@@ -24,15 +24,15 @@ class ListCommand(Command):
         del args
 
         registry = TemplateRegistry()
-        templates = registry.list_templates()
+        template_metadata = registry.list_metadata()
 
         print("=" * 40)
         print(" ForgePy Templates ")
         print("=" * 40)
 
-        if not templates:
+        if not template_metadata:
             print("Belum ada template yang terdaftar.")
             return
 
-        for key, template in templates.items():
-            print(f"- {key}: {template.name}")
+        for metadata in template_metadata:
+            print(f"- {metadata.name}: {metadata.description}")

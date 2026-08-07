@@ -8,6 +8,8 @@ Base Template
 from abc import ABC, abstractmethod
 from pathlib import Path
 
+from templates.template_engine.template_metadata import TemplateMetadata
+
 
 class BaseTemplate(ABC):
     """
@@ -21,6 +23,18 @@ class BaseTemplate(ABC):
         Nama template.
         """
         pass
+
+    @property
+    def metadata(self) -> TemplateMetadata:
+        """Return compatibility metadata for legacy template subclasses."""
+
+        return TemplateMetadata(
+            name=self.name,
+            description="",
+            version="",
+            author="",
+            tags=(),
+        )
 
     @abstractmethod
     def create(

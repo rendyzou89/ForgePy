@@ -31,9 +31,9 @@ The latest stable tag is `v0.6.0` (`Sprint 6 Stable`).
 | Repository setup | ForgePy initializes Git, stages content, and attempts an initial commit. |
 | Editor setup | ForgePy generates VS Code settings, launch, tasks, and extension recommendations. |
 
-## In Progress — Sprint 7 CLI and User Configuration
+## Implemented — Sprint 7 CLI and User Configuration
 
-The Sprint 7 CLI architecture is present on `master` in commits after `v0.6.0`; persistent configuration, its CLI command, and configuration-backed create defaults are current feature-branch work. No newer release tag exists.
+The Sprint 7 CLI architecture, persistent configuration, its CLI command, and configuration-backed create defaults are present on `master` in commits after `v0.6.0`. No newer release tag exists.
 
 | Area | Current implementation |
 | --- | --- |
@@ -44,7 +44,20 @@ The Sprint 7 CLI architecture is present on `master` in commits after `v0.6.0`; 
 | Version reporting | `config/version.py` is the canonical source and matches the `v0.6.0` release tag. |
 | User configuration | `ConfigCommand` manages all four settings; `CreateCommand` consumes only `default_location` and `default_template`, while `author` and `license` remain unused. |
 
-Sprint 7 completion should be based on verified CLI and configuration behavior with consistent documentation; this document does not assign an unrecorded release number.
+Sprint 7 behavior is covered by focused configuration and create-resolution tests; this document does not assign an unrecorded release number.
+
+## In Progress — Sprint 8.1 Template Metadata
+
+Sprint 8.1 introduces descriptive metadata as the registry and listing foundation for future templates. It does not add another template or change project generation.
+
+| Area | Current implementation |
+| --- | --- |
+| Metadata model | Immutable `TemplateMetadata` values contain name, description, template version, author, and tags. |
+| Registration | `TemplateRegistry.register()` validates template and metadata types, non-empty matching names, and uniqueness before preserving a registration. |
+| Listing | `list` reads registry metadata and displays each template name and description. |
+| Compatibility | `basic` remains the only template, its selector remains stable, and its generated output is unchanged. |
+
+Sprint 8.1 completion depends on focused metadata, registry, and list-output tests plus the existing CLI regression suite.
 
 ## Planned — Stabilization Toward v1.0
 
@@ -65,6 +78,7 @@ These are outcome-oriented priorities, not guaranteed feature commitments.
 
 - Document supported Python and operating-system ranges based on verified behavior.
 - Stabilize the CLI contract, `basic` template name and output, and project-generation lifecycle.
+- Define a template-metadata version policy before independently evolving template revisions.
 - Provide migration notes for any intentionally incompatible pre-1.0 change.
 
 ### v1.0 Readiness Gate

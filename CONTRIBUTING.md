@@ -74,7 +74,7 @@ The generator's fixed initial-commit message belongs to newly generated projects
 
 ## Testing requirements
 
-The repository uses the Python standard library `unittest` framework for focused user-configuration, configuration-CLI, and create-input-resolution coverage. Contributions that change behavior should introduce or update focused automated tests. Where an area remains uncovered, verify the affected behavior directly and describe the command and result in the pull request.
+The repository uses the Python standard library `unittest` framework for focused user-configuration, CLI, create-input-resolution, and template-metadata coverage. Contributions that change behavior should introduce or update focused automated tests. Where an area remains uncovered, verify the affected behavior directly and describe the command and result in the pull request.
 
 Relevant coverage includes:
 
@@ -84,7 +84,7 @@ Relevant coverage includes:
 - validation of interactive and explicit create inputs
 - create precedence from explicit location/template arguments through persisted defaults to the existing prompt/`basic` fallback
 - configuration-read failures that abort creation without prompting, generating, or overwriting user data
-- template registry lookup and listing
+- template metadata registration, registry lookup, and list-command output
 - the exact folders and files produced by `BasicTemplate`
 - generated text and JSON content
 - subprocess success and failure paths without invoking real package installation or Git operations in unit tests
@@ -174,11 +174,11 @@ Before requesting review, confirm:
 - [ ] Current, in-progress, planned, and exploratory behavior are not conflated.
 - [ ] CLI examples were verified against supported syntax.
 - [ ] Directory trees, dependency diagrams, lifecycles, and module descriptions match the code.
-- [ ] ForgePy version statements match `config/version.py` and the current release tag; generated-project and schema versions remain distinct.
+- [ ] ForgePy version statements match `config/version.py` and the current release tag; template-metadata, generated-project, and schema versions remain distinct.
 - [ ] Platform or Python support claims have evidence.
 - [ ] `PROJECT_CONTEXT.md`, `ROADMAP.md`, and `ARCHITECTURE.md` are updated when their facts change.
 - [ ] Markdown links, headings, tables, lists, and code fences render correctly on GitHub.
 
 ## Adding a template
 
-A new template contribution should implement `BaseTemplate`, keep rendered content separate from file writes, register the template in `TemplateRegistry`, and add coverage for registry listing and generated output. Do not change the existing `basic` template contract incidentally.
+A new template contribution should implement `BaseTemplate`, provide `TemplateMetadata` with a non-empty stable `name`; string `description`, template `version`, and `author`; and an iterable of string `tags` stored as a tuple. Register through `TemplateRegistry.register()`; the metadata name must match the template's selection name and must not duplicate an existing registration. Keep rendered content separate from file writes, add coverage for successful and rejected registration, registry listing, and generated output, and do not change the existing `basic` template contract incidentally.
