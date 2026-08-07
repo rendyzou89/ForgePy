@@ -8,6 +8,7 @@ Module  : Create Command
 from argparse import ArgumentParser, Namespace
 
 from cli.command import Command
+from config.user_config import ConfigStore, ForgePyConfigError
 from core.project_generator import ProjectGenerator
 
 
@@ -20,9 +21,16 @@ class CreateCommand(Command):
     summary = "Create a new Python project."
     description = (
         "Create a Python project from a registered ForgePy template. "
-        "When the project name or location is omitted, ForgePy prompts "
-        "for it before starting project generation."
+        "ForgePy prompts for an omitted project name and resolves omitted "
+        "location or template values from user configuration before using "
+        "the existing interactive or basic fallback."
     )
+
+    def __init__(
+        self,
+        store: ConfigStore | None = None,
+    ) -> None:
+        self._store = store
 
     def configure_parser(
         self,
@@ -44,19 +52,46 @@ class CreateCommand(Command):
             metavar="PATH",
             help=(
                 "Existing parent directory for the new project. "
-                "ForgePy prompts for it when omitted."
+                "When omitted, ForgePy uses configured default_location "
+                "before prompting."
             ),
         )
 
         parser.add_argument(
             "--template",
             "-t",
-            default="basic",
             metavar="NAME",
-            help="Registered project template to use (default: %(default)s).",
+            help=(
+                "Registered project template to use. When omitted, "
+                "ForgePy uses configured default_template, then basic."
+            ),
         )
 
     def execute(self, args: Namespace) -> None:
+        location = getattr(
+            args,
+            "location",
+            None,
+        )
+        template_name = getattr(
+            args,
+            "template",
+            None,
+        )
+
+        user_config: dict[str, str] = {}
+
+        if location is None or template_name is None:
+            try:
+                user_config = self._get_store().load()
+            except ForgePyConfigError as error:
+                print(f"[ERROR] {error}")
+                print(
+                    "[INFO] Run 'python main.py config reset' or supply "
+                    "both --location and --template explicitly."
+                )
+                return
+
         project_name = getattr(
             args,
             "project_name",
@@ -68,22 +103,22 @@ class CreateCommand(Command):
                 "Project Name : "
             ).strip()
 
-        location = getattr(
-            args,
-            "location",
-            None,
-        )
+        if location is None:
+            location = user_config[
+                "default_location"
+            ]
 
         if not location:
             location = input(
                 "Location : "
             ).strip()
 
-        template_name = getattr(
-            args,
-            "template",
-            "basic",
-        ) or "basic"
+        if template_name is None:
+            template_name = user_config[
+                "default_template"
+            ]
+
+        template_name = template_name or "basic"
 
         if not project_name:
             print("[ERROR] Nama project tidak boleh kosong.")
@@ -100,3 +135,9 @@ class CreateCommand(Command):
             location=location,
             template_name=template_name,
         )
+
+    def _get_store(self) -> ConfigStore:
+        if self._store is None:
+            self._store = ConfigStore()
+
+        return self._store
