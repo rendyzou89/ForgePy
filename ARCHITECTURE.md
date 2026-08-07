@@ -10,7 +10,7 @@ ForgePy is a layered command-line application. The CLI parses user input and sel
 ForgePy/
 |-- builders/                 Reusable file-system and Python-tool builders
 |-- cli/                      Argument parsing, dispatch, and command objects
-|   `-- commands/             create, list, and version implementations
+|   `-- commands/             Implementations and the shared command catalog
 |-- config/                   Version constants and default project layout
 |-- core/                     Project workflow and environment/tool integrations
 |-- models/                   Project configuration data model
@@ -37,7 +37,9 @@ ForgePy/
 | --- | --- |
 | `main.py` | Connects `Parser` to `Dispatcher`. |
 | `cli/parser.py` | Defines CLI syntax, defaults, and subcommands. |
-| `cli/dispatcher.py` | Maps command names to `Command` implementations; defaults to `create`. |
+| `cli/command.py` | Defines command metadata, parser configuration, and execution contracts. |
+| `cli/commands/__init__.py` | Registers the built-in commands in one explicit catalog. |
+| `cli/dispatcher.py` | Builds command lookup from the shared catalog; defaults to `create`. |
 | `cli/commands/` | Validates command-level input and invokes application services. |
 | `models/project_config.py` | Stores project name and location and derives the root path. |
 | `core/project_generator.py` | Orchestrates the complete create workflow. |
@@ -50,6 +52,12 @@ ForgePy/
 | `templates/template_manager.py` | Provides one facade over generated root-file content. |
 | `config/` | Supplies application metadata and the basic directory list. |
 
+## Version Source
+
+`config/version.py` is the canonical source for the ForgePy application version. `VersionCommand` imports `APP_NAME` and `VERSION` from that module and adds the conventional `v` prefix only when displaying the release. Module docstrings do not duplicate release numbers.
+
+Versions rendered into generated projects and version fields required by VS Code JSON schemas are independent of the ForgePy release version.
+
 ## Dependency flow
 
 ```mermaid
@@ -59,9 +67,15 @@ flowchart TD
     Parser --> Namespace[argparse Namespace]
     Namespace --> Dispatcher
 
-    Dispatcher --> Create[CreateCommand]
-    Dispatcher --> List[ListCommand]
-    Dispatcher --> Version[VersionCommand]
+    Parser --> Catalog[Command catalog]
+    Dispatcher --> Catalog
+    Catalog --> Create[CreateCommand]
+    Catalog --> List[ListCommand]
+    Catalog --> Version[VersionCommand]
+
+    Dispatcher --> Create
+    Dispatcher --> List
+    Dispatcher --> Version
 
     Create --> Generator[ProjectGenerator]
     List --> Registry[TemplateRegistry]
@@ -88,8 +102,9 @@ CLI and orchestration layers depend on lower-level services. Template content mo
 
 ## Class relationships
 
-- `Command` is an abstract base implemented by `CreateCommand`, `ListCommand`, and `VersionCommand`.
-- `Dispatcher` owns a mapping of CLI names to those command objects.
+- `Command` defines the shared name, help metadata, parser-configuration hook, and execution contract implemented by `CreateCommand`, `ListCommand`, and `VersionCommand`.
+- `cli.commands.create_commands()` is the single built-in command catalog used by both `Parser` and `Dispatcher`.
+- `Dispatcher` derives its CLI-name mapping from that catalog.
 - `CreateCommand` invokes `ProjectGenerator`; the other commands query configuration or the template registry directly.
 - `ProjectConfig` is a slotted dataclass used by `ProjectGenerator` to derive the target root.
 - `BaseTemplate` is implemented by `BasicTemplate` and stored by `TemplateRegistry`.
@@ -112,7 +127,9 @@ VS Code files are not part of `TemplateFiles`. After the rest of project setup, 
 ```mermaid
 flowchart LR
     Args[Command-line arguments] --> Parse[Parser.parse]
+    Catalog[Command catalog] --> Parse
     Parse --> Dispatch[Dispatcher.dispatch]
+    Catalog --> Dispatch
     Dispatch -->|create or no command| Create[CreateCommand]
     Dispatch -->|list| List[ListCommand]
     Dispatch -->|version| Version[VersionCommand]
@@ -185,7 +202,6 @@ The current implementation uses Windows executable paths such as `.venv/Scripts/
 
 ## Known limitations and technical debt
 
-- Version sources conflict: the stable tag is `v0.6.0`, runtime configuration says `0.4.0`, builder headers include `v0.6.4`, CLI headers say `v0.7.2`, and other source headers still include `v0.4.0`.
 - The full generation lifecycle assumes Windows `.venv/Scripts/*.exe` paths.
 - There is no automated test suite or declared test framework.
 - `TemplateRegistry.get()` raises `KeyError` for unknown names rather than producing a command-level error.
@@ -201,7 +217,8 @@ Apply the design principles and Definition of Done in [`ENGINEERING_PRINCIPLES.m
 
 ### Commands
 
-- Implement `Command.execute(args)`, register the instance in `Dispatcher`, and define syntax in `Parser`.
+- Implement the `Command` metadata and `execute(args)` contract; override `configure_parser()` only when the command accepts arguments.
+- Add the command to `cli.commands.create_commands()`. Parser and dispatcher registration then follow automatically.
 - Keep argument parsing out of core services and preserve the no-command interactive create fallback.
 - Add tests or documented manual checks for dispatch, validation, and existing commands.
 

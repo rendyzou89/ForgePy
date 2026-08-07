@@ -1,13 +1,16 @@
 """
 ==================================================
 ForgePy
-Version : v0.7.2
 Module  : CLI Parser
 ==================================================
 """
 
 import argparse
 from argparse import Namespace
+from collections.abc import Iterable
+
+from cli.command import Command
+from cli.commands import create_commands
 
 
 class Parser:
@@ -15,10 +18,26 @@ class Parser:
     Membaca command dan argumen dari terminal.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        commands: Iterable[Command] | None = None,
+    ) -> None:
+        self.commands = tuple(
+            create_commands()
+            if commands is None
+            else commands
+        )
+
         self.parser = argparse.ArgumentParser(
             prog="forgepy",
-            description="ForgePy Python Project Generator",
+            description=(
+                "Create structured Python projects and prepare their "
+                "development tooling with ForgePy."
+            ),
+            epilog=(
+                "Run 'python main.py COMMAND --help' for command-specific "
+                "usage from this repository."
+            ),
         )
 
         # Default untuk mode interaktif:
@@ -35,53 +54,20 @@ class Parser:
         subparsers = self.parser.add_subparsers(
             dest="command",
             title="commands",
+            description="Available ForgePy commands",
+            metavar="COMMAND",
         )
 
-        # ==========================
-        # Create Command
-        # ==========================
+        for command in self.commands:
+            command.validate_registration()
 
-        create_parser = subparsers.add_parser(
-            "create",
-            help="Membuat project Python baru.",
-        )
+            command_parser = subparsers.add_parser(
+                command.name,
+                help=command.summary,
+                description=command.description,
+            )
 
-        create_parser.add_argument(
-            "project_name",
-            nargs="?",
-            help="Nama project yang akan dibuat.",
-        )
-
-        create_parser.add_argument(
-            "--location",
-            "-l",
-            help="Lokasi penyimpanan project.",
-        )
-
-        create_parser.add_argument(
-            "--template",
-            "-t",
-            default="basic",
-            help="Template project. Default: basic.",
-        )
-
-        # ==========================
-        # Version Command
-        # ==========================
-
-        subparsers.add_parser(
-            "version",
-            help="Menampilkan versi ForgePy.",
-        )
-
-        # ==========================
-        # List Command
-        # ==========================
-
-        subparsers.add_parser(
-            "list",
-            help="Menampilkan daftar template.",
-        )
+            command.configure_parser(command_parser)
 
     def parse(self) -> Namespace:
         """

@@ -141,7 +141,7 @@ Before requesting review, confirm:
 - [ ] Current, in-progress, planned, and exploratory behavior are not conflated.
 - [ ] CLI examples were verified against supported syntax.
 - [ ] Directory trees, dependency diagrams, lifecycles, and module descriptions match the code.
-- [ ] Stable tags and inconsistent runtime/header versions are distinguished accurately.
+- [ ] ForgePy version statements match `config/version.py` and the current release tag; generated-project and schema versions remain distinct.
 - [ ] Platform or Python support claims have evidence.
 - [ ] `PROJECT_CONTEXT.md`, `ROADMAP.md`, and `ARCHITECTURE.md` are updated when their facts change.
 - [ ] Markdown links, headings, tables, lists, and code fences render correctly on GitHub.

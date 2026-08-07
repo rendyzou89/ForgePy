@@ -1,12 +1,11 @@
 """
 ==================================================
 ForgePy
-Version : v0.7.2
 Module  : Create Command
 ==================================================
 """
 
-from argparse import Namespace
+from argparse import ArgumentParser, Namespace
 
 from cli.command import Command
 from core.project_generator import ProjectGenerator
@@ -16,6 +15,46 @@ class CreateCommand(Command):
     """
     Membuat project baru melalui ProjectGenerator.
     """
+
+    name = "create"
+    summary = "Create a new Python project."
+    description = (
+        "Create a Python project from a registered ForgePy template. "
+        "When the project name or location is omitted, ForgePy prompts "
+        "for it before starting project generation."
+    )
+
+    def configure_parser(
+        self,
+        parser: ArgumentParser,
+    ) -> None:
+        parser.add_argument(
+            "project_name",
+            nargs="?",
+            metavar="PROJECT_NAME",
+            help=(
+                "Name of the project to create. "
+                "ForgePy prompts for it when omitted."
+            ),
+        )
+
+        parser.add_argument(
+            "--location",
+            "-l",
+            metavar="PATH",
+            help=(
+                "Existing parent directory for the new project. "
+                "ForgePy prompts for it when omitted."
+            ),
+        )
+
+        parser.add_argument(
+            "--template",
+            "-t",
+            default="basic",
+            metavar="NAME",
+            help="Registered project template to use (default: %(default)s).",
+        )
 
     def execute(self, args: Namespace) -> None:
         project_name = getattr(

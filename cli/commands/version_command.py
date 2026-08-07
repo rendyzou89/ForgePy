@@ -1,7 +1,6 @@
 """
 ==================================================
 ForgePy
-Version : v0.7.2
 Module  : Version Command
 ==================================================
 """
@@ -17,6 +16,10 @@ class VersionCommand(Command):
     """
     Menampilkan informasi versi ForgePy.
     """
+
+    name = "version"
+    summary = "Show ForgePy and Python version information."
+    description = "Show the configured ForgePy version and active Python version."
 
     def execute(self, args: Namespace) -> None:
         del args

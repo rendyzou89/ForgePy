@@ -8,7 +8,7 @@
 - **Current stable release/tag:** `v0.6.0` (`Sprint 6 Stable`)
 - **Current development area:** Sprint 7 CLI, represented by the CLI architecture and interactive-create commits after `v0.6.0`.
 
-The stable tag and runtime metadata are not aligned: `config/version.py` reports `0.4.0`, builder headers include `v0.6.4`, and CLI source headers say `v0.7.2`. Other core and template headers still include `v0.4.0`. No release tag newer than `v0.6.0` exists.
+`config/version.py` is the canonical ForgePy version source and reports `0.6.0`, matching the `v0.6.0` stable release tag. No release tag newer than `v0.6.0` exists.
 
 ## ForgePy Philosophy
 
@@ -52,7 +52,6 @@ The root `README.md`, `requirements.txt`, and `config.py` are currently empty.
 ## Near-term priorities
 
 - Finish and verify Sprint 7 CLI behavior without breaking interactive creation.
-- Align version sources and release documentation.
 - Establish tests for supported commands, template output, and failure handling.
 - Document platform and Python support based on verified behavior.
 
@@ -71,7 +70,7 @@ Use this section as the handoff point for a new developer or AI session.
 | Active development area | Sprint 7 CLI |
 | Implemented CLI | `create`, `list`, `version`, plus no-command interactive create |
 | Implemented templates | `basic` only |
-| Primary uncertainty | Conflicting tag, runtime, and source-header versions |
+| Version source | `config/version.py`, aligned with the `v0.6.0` release tag |
 | Verification state | No automated test suite is configured; use supported manual checks |
 
 To resume work:

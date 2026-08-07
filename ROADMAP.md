@@ -37,10 +37,11 @@ Two commits after `v0.6.0` establish the current development area on `master`; n
 
 | Area | Current implementation |
 | --- | --- |
-| Command model | Abstract `Command` contract with dispatcher registration. |
+| Command model | Shared `Command` contract and one explicit command catalog used by parsing and dispatch. |
 | Commands | `create`, `list`, and `version`. |
 | Invocation | Argument-based creation and interactive prompting. |
 | Compatibility | No subcommand continues to open the create workflow. |
+| Version reporting | `config/version.py` is the canonical source and matches the `v0.6.0` release tag. |
 
 Sprint 7 completion should be based on verified CLI behavior and consistent documentation; this document does not assign an unrecorded release number.
 
@@ -50,7 +51,7 @@ These are outcome-oriented priorities, not guaranteed feature commitments.
 
 ### Repository Consistency
 
-- Establish one authoritative version source and reconcile the `v0.6.0` tag, `0.4.0` runtime value, `v0.6.4` builder headers, and `v0.7.2` CLI headers.
+- Keep the canonical application version synchronized with release tags without duplicating it in module headers.
 - Populate or intentionally resolve the empty root README and project metadata.
 
 ### Verification and Failure Behavior
