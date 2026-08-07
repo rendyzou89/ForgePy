@@ -11,7 +11,10 @@ ForgePy/
 |-- builders/                 Reusable file-system and Python-tool builders
 |-- cli/                      Argument parsing, dispatch, and command objects
 |   `-- commands/             Implementations and the shared command catalog
-|-- config/                   Version constants and default project layout
+|-- config/                   Application and user configuration
+|   |-- default_structure.py  Generated project layout defaults
+|   |-- user_config.py        Persistent user configuration store
+|   `-- version.py            Canonical ForgePy version metadata
 |-- core/                     Project workflow and environment/tool integrations
 |-- models/                   Project configuration data model
 |-- templates/                Generated file content and template facade
@@ -28,6 +31,7 @@ ForgePy/
 |-- ENGINEERING_PRINCIPLES.md Engineering policy and completion criteria
 |-- PROJECT_CONTEXT.md        Current development and handoff context
 |-- ROADMAP.md                Implemented, active, planned, and idea states
+|-- tests/                    Standard-library automated tests
 `-- requirements.txt          Runtime dependency file; currently empty
 ```
 
@@ -39,6 +43,8 @@ ForgePy/
 | `cli/parser.py` | Defines CLI syntax, defaults, and subcommands. |
 | `cli/command.py` | Defines command metadata, parser configuration, and execution contracts. |
 | `cli/commands/__init__.py` | Registers the built-in commands in one explicit catalog. |
+| `cli/commands/create_command.py` | Resolves project name, location, and template inputs before invoking project generation. |
+| `cli/commands/config_command.py` | Adapts configuration actions, output, and ForgePy configuration errors for the CLI. |
 | `cli/dispatcher.py` | Builds command lookup from the shared catalog; defaults to `create`. |
 | `cli/commands/` | Validates command-level input and invokes application services. |
 | `models/project_config.py` | Stores project name and location and derives the root path. |
@@ -50,13 +56,43 @@ ForgePy/
 | `builders/` | Creates folders/files and upgrades Python packaging tools. |
 | `templates/template_engine/` | Defines, registers, and supplies project templates. |
 | `templates/template_manager.py` | Provides one facade over generated root-file content. |
-| `config/` | Supplies application metadata and the basic directory list. |
+| `config/default_structure.py` | Supplies the basic generated-project directory list. |
+| `config/user_config.py` | Loads, validates, updates, resets, and atomically saves user-level JSON configuration. |
+| `config/version.py` | Supplies canonical application metadata. |
+| `tests/test_config_command.py` | Verifies configuration parsing, dispatch, output, persistence, reset, and error handling with an isolated home. |
+| `tests/test_create_command.py` | Verifies create-input precedence, prompting, configuration errors, and generator delegation without generating a project. |
+| `tests/test_user_config.py` | Verifies configuration behavior in temporary home directories. |
 
 ## Version Source
 
 `config/version.py` is the canonical source for the ForgePy application version. `VersionCommand` imports `APP_NAME` and `VERSION` from that module and adds the conventional `v` prefix only when displaying the release. Module docstrings do not duplicate release numbers.
 
 Versions rendered into generated projects and version fields required by VS Code JSON schemas are independent of the ForgePy release version.
+
+## User Configuration
+
+`ConfigStore` persists user-level settings at `~/.forgepy/config.json`. Its constructor accepts an alternate home directory so tests and library callers can isolate all file-system effects. `ConfigCommand` exposes the store without duplicating its validation or persistence rules.
+
+```mermaid
+flowchart LR
+    CLI[config show / set / reset] --> Command[ConfigCommand]
+    Command --> Store[ConfigStore]
+    Create[CreateCommand] -->|location or template omitted| Store
+    Store -->|default_location and default_template| Create
+    Caller[Tests or library caller] --> Store
+    Store --> Defaults[Safe defaults]
+    Store --> Validation[Supported names and string values]
+    Store --> File[~/.forgepy/config.json]
+    File --> Store
+```
+
+The supported defaults are `default_template = "basic"`, `default_location = ""`, `author = ""`, and `license = "MIT"`. Loading a missing file returns a new defaults dictionary without creating the directory. Saving creates the directory and atomically replaces the JSON file. Updates preserve other settings; reset is the explicit operation that replaces persisted content with defaults.
+
+`config show` delegates to `ConfigStore.load()`, `config set KEY VALUE` delegates to `ConfigStore.update()`, and `config reset` delegates to `ConfigStore.reset()`. The command formats successful output and converts errors derived from `ForgePyConfigError` into concise CLI messages. A failed show or set does not replace malformed user data; reset is the explicit recovery operation that persists defaults.
+
+When `--location` or `--template` is omitted, `CreateCommand` loads configuration once and resolves only `default_location` and `default_template`. Explicit arguments have priority. An empty configured location preserves the existing prompt, and an empty configured template falls back to `"basic"`. If the required read fails, the command reports the ForgePy configuration error and stops before prompting or generation. When both options are explicit, configuration is not read.
+
+`author` and `license` remain persisted but unused. `ProjectGenerator`, builders, and templates do not import the store or receive its mapping, so the generation lifecycle and generated files are unchanged.
 
 ## Dependency flow
 
@@ -72,14 +108,19 @@ flowchart TD
     Catalog --> Create[CreateCommand]
     Catalog --> List[ListCommand]
     Catalog --> Version[VersionCommand]
+    Catalog --> Config[ConfigCommand]
 
     Dispatcher --> Create
     Dispatcher --> List
     Dispatcher --> Version
+    Dispatcher --> Config
 
+    Create --> UserConfig
     Create --> Generator[ProjectGenerator]
     List --> Registry[TemplateRegistry]
     Version --> VersionConfig[config.version]
+    Config --> UserConfig[ConfigStore]
+    UserConfig --> ConfigFile[~/.forgepy/config.json]
 
     Generator --> ProjectConfig[ProjectConfig]
     Generator --> Registry
@@ -102,10 +143,10 @@ CLI and orchestration layers depend on lower-level services. Template content mo
 
 ## Class relationships
 
-- `Command` defines the shared name, help metadata, parser-configuration hook, and execution contract implemented by `CreateCommand`, `ListCommand`, and `VersionCommand`.
+- `Command` defines the shared name, help metadata, parser-configuration hook, and execution contract implemented by `CreateCommand`, `ListCommand`, `VersionCommand`, and `ConfigCommand`.
 - `cli.commands.create_commands()` is the single built-in command catalog used by both `Parser` and `Dispatcher`.
 - `Dispatcher` derives its CLI-name mapping from that catalog.
-- `CreateCommand` invokes `ProjectGenerator`; the other commands query configuration or the template registry directly.
+- `CreateCommand` resolves explicit, persisted, and interactive/default inputs before invoking `ProjectGenerator`; `ListCommand` queries `TemplateRegistry`, `VersionCommand` reads canonical version metadata, and `ConfigCommand` delegates user-setting operations to `ConfigStore`.
 - `ProjectConfig` is a slotted dataclass used by `ProjectGenerator` to derive the target root.
 - `BaseTemplate` is implemented by `BasicTemplate` and stored by `TemplateRegistry`.
 - `BaseBuilder` is the parent of `FileBuilder`, `FolderBuilder`, and `PythonToolsBuilder`; it currently defines no methods.
@@ -133,23 +174,46 @@ flowchart LR
     Dispatch -->|create or no command| Create[CreateCommand]
     Dispatch -->|list| List[ListCommand]
     Dispatch -->|version| Version[VersionCommand]
-    Create -->|missing values| Prompt[Interactive prompts]
-    Prompt --> Generator[ProjectGenerator.create]
-    Create -->|values supplied| Generator
+    Dispatch -->|config| Config[ConfigCommand]
+    Create --> Resolve[Resolve create inputs]
+    Resolve -->|location or template omitted| Store[ConfigStore]
+    Store --> Resolve
+    Resolve -->|project name or location still empty| Prompt[Interactive prompts]
+    Prompt --> Resolve
+    Resolve --> Generator[ProjectGenerator.create]
     List --> Registry[TemplateRegistry.list_templates]
     Version --> Metadata[config.version + platform]
+    Config -->|show / set / reset| Store[ConfigStore]
+    Store --> UserFile[~/.forgepy/config.json]
 ```
 
 ### Startup and dispatch
 
 1. `main()` creates `Parser` and parses `sys.argv` through `argparse`.
-2. `Dispatcher` selects `create`, `list`, or `version`.
+2. `Dispatcher` selects `create`, `list`, `version`, or `config`.
 3. With no subcommand, the dispatcher selects `create` for interactive compatibility.
 4. The selected command receives the parsed `Namespace`.
 
+### Configuration workflow
+
+`ConfigCommand` owns the nested `show`, `set`, and `reset` syntax. It lazily creates a default `ConfigStore` only when a configuration action executes; tests inject a store rooted in a temporary home directory.
+
+1. `show` loads the effective configuration and displays every supported setting. A missing file produces defaults without creating the configuration directory.
+2. `set KEY VALUE` asks the store to validate and persist one setting while preserving the others.
+3. `reset` explicitly persists all safe defaults, including when recovery from malformed content is required.
+4. Store errors are displayed with a ForgePy error prefix and no traceback.
+
+`ConfigCommand` manages all four persistent values. Separately, `CreateCommand` may read only `default_location` and `default_template` while resolving omitted create options. Neither command passes the store or configuration mapping into `ProjectGenerator`.
+
 ### Create workflow
 
-`CreateCommand` obtains a project name and location from arguments or interactive prompts, validates that neither is empty, and calls `ProjectGenerator.create()`.
+`CreateCommand` uses these independent precedence rules before calling `ProjectGenerator.create()`:
+
+1. Project name: explicit positional argument, then the existing prompt.
+2. Location: explicit `--location`, then non-empty `default_location`, then the existing prompt.
+3. Template: explicit `--template`, then non-empty `default_template`, then `"basic"`.
+
+Argparse uses `None` for an omitted template so an explicit `--template basic` remains distinguishable from omission. The store is loaded only when location or template is omitted. A malformed or unreadable required configuration aborts resolution with a clear error; it is not overwritten or silently replaced by the fallback.
 
 The generator then executes these stages in order:
 
@@ -166,6 +230,7 @@ The generator then executes these stages in order:
 ```mermaid
 sequenceDiagram
     participant C as CreateCommand
+    participant UC as ConfigStore
     participant G as ProjectGenerator
     participant TR as TemplateRegistry
     participant BT as BasicTemplate
@@ -177,6 +242,15 @@ sequenceDiagram
     participant Git as GitBuilder
     participant V as VSCodeBuilder
 
+    opt Location or template omitted
+        C->>UC: load()
+        break ConfigStore raises ForgePyConfigError
+            UC-->>C: configuration error
+            C->>C: Report error and return before generation
+        end
+        UC-->>C: validated settings
+    end
+    C->>C: Resolve CLI, persisted, and prompt/basic values
     C->>G: create(name, location, template)
     G->>G: Resolve location and create project root
     G->>TR: get(template_name)
@@ -203,7 +277,8 @@ The current implementation uses Windows executable paths such as `.venv/Scripts/
 ## Known limitations and technical debt
 
 - The full generation lifecycle assumes Windows `.venv/Scripts/*.exe` paths.
-- There is no automated test suite or declared test framework.
+- Automated coverage currently focuses on user configuration, its CLI command, and create-input resolution; the generator lifecycle and other application areas remain uncovered.
+- `author` and `license` are persisted but not applied to generated content.
 - `TemplateRegistry.get()` raises `KeyError` for unknown names rather than producing a command-level error.
 - Most subprocess failures propagate; only the initial Git commit has local error handling.
 - The generator writes into an existing project root because it uses `exist_ok=True`.
@@ -227,6 +302,14 @@ Apply the design principles and Definition of Done in [`ENGINEERING_PRINCIPLES.m
 - Implement `BaseTemplate`, keep rendered content separate from file writes, and register it in `TemplateRegistry`.
 - Do not change the `basic` name or output contract incidentally.
 - Verify registry listing, selection, generated folders, and generated files in an isolated location.
+
+### User Configuration
+
+- Keep persistence and validation in `ConfigStore`; `ConfigCommand` should contain only CLI parsing, presentation, and error adaptation.
+- Resolve `default_location` and `default_template` in `CreateCommand` with explicit CLI values first and existing prompt/basic behavior last.
+- Keep `ProjectGenerator`, builders, and templates independent of `ConfigStore`; applying `author` or `license` requires a separate explicit requirement.
+- Add supported settings to the defaults and validation schema together.
+- Preserve malformed files on load/update failures, and use injected temporary home directories in tests.
 
 ### Core lifecycle
 

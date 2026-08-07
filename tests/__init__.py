@@ -1,0 +1,3 @@
+"""
+ForgePy automated tests.
+"""

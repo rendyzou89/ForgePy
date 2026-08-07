@@ -22,7 +22,7 @@ The project favors:
 - `core/ProjectGenerator` owns project-generation sequencing.
 - Builders and core tooling services own focused side effects.
 - `templates/` owns rendered content and template registration.
-- `models/` carries project data; `config/` provides metadata and defaults.
+- `models/` carries project data; `config/` owns application metadata, generated-layout defaults, and isolated user-configuration persistence.
 
 Dependencies should follow those boundaries. Templates and builders must not depend back on the CLI.
 
@@ -36,11 +36,11 @@ Extend commands through the shared `Command` metadata and `execute()` contract, 
 
 ### Preserve compatibility intentionally
 
-The no-command interactive create flow, the `create`, `list`, and `version` commands, the `basic` template name, and the existing generated layout are compatibility-sensitive. Change them only through an explicit requirement with tests or documented migration verification.
+The no-command interactive create flow, the `create`, `list`, `version`, and `config show/set/reset` commands, the `basic` template name, and the existing generated layout are compatibility-sensitive. Create defaults resolve in the order explicit CLI value, persisted user setting, then the existing prompt or `basic` fallback. Change these contracts only through an explicit requirement with tests or documented migration verification.
 
 ### Make side effects visible
 
-Environment creation, package installation, Git initialization, and VS Code generation are observable lifecycle stages. New side effects must have clear ownership, failure behavior, and user-facing status.
+Environment creation, package installation, Git initialization, VS Code generation, and persistent configuration writes are observable side effects. New side effects must have clear ownership, failure behavior, and user-facing status.
 
 ### Keep portability claims evidence-based
 

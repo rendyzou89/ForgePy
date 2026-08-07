@@ -31,19 +31,20 @@ The latest stable tag is `v0.6.0` (`Sprint 6 Stable`).
 | Repository setup | ForgePy initializes Git, stages content, and attempts an initial commit. |
 | Editor setup | ForgePy generates VS Code settings, launch, tasks, and extension recommendations. |
 
-## In Progress — Sprint 7 CLI
+## In Progress — Sprint 7 CLI and User Configuration
 
-Two commits after `v0.6.0` establish the current development area on `master`; no newer release tag exists.
+The Sprint 7 CLI architecture is present on `master` in commits after `v0.6.0`; persistent configuration, its CLI command, and configuration-backed create defaults are current feature-branch work. No newer release tag exists.
 
 | Area | Current implementation |
 | --- | --- |
 | Command model | Shared `Command` contract and one explicit command catalog used by parsing and dispatch. |
-| Commands | `create`, `list`, and `version`. |
-| Invocation | Argument-based creation and interactive prompting. |
+| Commands | `create`, `list`, `version`, and `config` with `show`, `set`, and `reset` actions. |
+| Invocation | Creation resolves explicit arguments, persisted location/template defaults, and existing prompt/`basic` fallbacks in that order. |
 | Compatibility | No subcommand continues to open the create workflow. |
 | Version reporting | `config/version.py` is the canonical source and matches the `v0.6.0` release tag. |
+| User configuration | `ConfigCommand` manages all four settings; `CreateCommand` consumes only `default_location` and `default_template`, while `author` and `license` remain unused. |
 
-Sprint 7 completion should be based on verified CLI behavior and consistent documentation; this document does not assign an unrecorded release number.
+Sprint 7 completion should be based on verified CLI and configuration behavior with consistent documentation; this document does not assign an unrecorded release number.
 
 ## Planned — Stabilization Toward v1.0
 
@@ -56,7 +57,7 @@ These are outcome-oriented priorities, not guaranteed feature commitments.
 
 ### Verification and Failure Behavior
 
-- Establish automated coverage for CLI routing, template output, builders, and subprocess boundaries.
+- Expand automated coverage beyond configuration and create-input resolution to template output, builders, the generator lifecycle, and subprocess boundaries.
 - Define predictable validation for unknown templates, missing tools, failed subprocesses, and existing target paths.
 - Retain documented manual checks until automated infrastructure covers them.
 

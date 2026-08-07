@@ -74,12 +74,16 @@ The generator's fixed initial-commit message belongs to newly generated projects
 
 ## Testing requirements
 
-The repository does not currently contain an automated test suite or configured test framework. Contributions that change behavior should introduce or update focused automated tests as the test infrastructure is established. At minimum, verify the affected behavior directly and describe the command and result in the pull request.
+The repository uses the Python standard library `unittest` framework for focused user-configuration, configuration-CLI, and create-input-resolution coverage. Contributions that change behavior should introduce or update focused automated tests. Where an area remains uncovered, verify the affected behavior directly and describe the command and result in the pull request.
 
 Relevant coverage includes:
 
-- CLI parsing and dispatch for `create`, `list`, and `version`
+- user configuration defaults, persistence, validation, updates, resets, and error handling
+- CLI parsing and dispatch for `create`, `list`, `version`, and `config`
+- `config show/set/reset` output, persistence, validation, and malformed-file handling
 - validation of interactive and explicit create inputs
+- create precedence from explicit location/template arguments through persisted defaults to the existing prompt/`basic` fallback
+- configuration-read failures that abort creation without prompting, generating, or overwriting user data
 - template registry lookup and listing
 - the exact folders and files produced by `BasicTemplate`
 - generated text and JSON content
@@ -90,15 +94,44 @@ Tests that create files should use an isolated temporary directory and must not 
 
 ### Supported manual checks
 
-These read-only commands exercise paths currently supported by the repository:
+Run the automated suite with:
+
+```powershell
+python -m unittest discover -s tests -v
+```
+
+These read-only commands exercise existing CLI paths:
 
 ```powershell
 python main.py --help
 python main.py version
 python main.py list
+python main.py config --help
 ```
 
-`python main.py` and `python main.py create <name> --location <existing-path> --template basic` are also supported, but they start or perform a side-effectful generation lifecycle. Run them only with deliberate input in an isolated temporary parent directory; creation may build an environment, install packages, and initialize Git.
+`config show` reads and prints the effective user configuration, while `config set` and `config reset` write `~/.forgepy/config.json`. Run all three against an isolated home during recorded manual verification so user values are neither changed nor exposed in logs. On Windows PowerShell, use a process-scoped temporary `USERPROFILE` and restore it afterward:
+
+```powershell
+$forgepyOriginalProfile = $env:USERPROFILE
+$forgepyTestProfile = Join-Path $env:TEMP (
+    "forgepy-cli-test-" + [guid]::NewGuid()
+)
+New-Item -ItemType Directory -Force -Path $forgepyTestProfile | Out-Null
+
+try {
+    $env:USERPROFILE = $forgepyTestProfile
+    python main.py config show
+    python main.py config set author "Test User"
+    python main.py config show
+    python main.py config reset
+}
+finally {
+    $env:USERPROFILE = $forgepyOriginalProfile
+    Remove-Item -LiteralPath $forgepyTestProfile -Recurse -Force
+}
+```
+
+`python main.py` and `python main.py create <name> --location <existing-path> --template basic` are also supported, but they start or perform a side-effectful generation lifecycle. Omitted location or template options can read the current user configuration; use both explicit options for a deterministic bypass or isolate `USERPROFILE`. Run generation only with deliberate input in an isolated temporary parent directory because it may build an environment, install packages, and initialize Git.
 
 ## Pull request rules
 

@@ -45,7 +45,7 @@ class Parser:
         self.parser.set_defaults(
             project_name=None,
             location=None,
-            template="basic",
+            template=None,
         )
 
         self._register_commands()
