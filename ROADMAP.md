@@ -105,7 +105,7 @@ Sprint 8.4 separated the implemented templates' metadata, generation context, fi
 
 Sprint 8.4 introduced no new template, command, ForgePy version, or delivery date.
 
-## In Progress — Sprint 9.0 Component Foundation
+## Implemented — Sprint 9.0 Component Foundation
 
 Sprint 9.0 introduces an independent component-definition and registration foundation without adding components or connecting the catalog to project generation.
 
@@ -118,7 +118,20 @@ Sprint 9.0 introduces an independent component-definition and registration found
 | Isolation | Components have no built-ins, discovery, persistence, CLI, configuration, template, builder, or generator integration. |
 | Verification | Focused standard-library tests cover metadata immutability, valid registration, lookup/listing, and rejection paths. |
 
-Sprint 9.0 currently introduces no component installation, built-in component, CLI command, ForgePy version, or delivery date.
+Sprint 9.0 introduced no component installation, built-in component, CLI command, ForgePy version, or delivery date.
+
+## In Progress — Sprint 9.1 Component Installation Contract
+
+Sprint 9.1 adds only the contract required for a component to operate on an explicitly supplied existing project directory.
+
+| Area | Current Sprint 9.1 scope |
+| --- | --- |
+| Context | Immutable `ComponentContext` validates one `pathlib.Path` as an existing directory. |
+| Contract | `BaseComponent.install(context)` is the only installation hook. |
+| Registry | Registration and lookup remain installation-agnostic and empty by default. |
+| Integration | No built-in components, CLI command, discovery, persistence, dependency resolution, rollback, plugin loading, or generation integration. |
+
+Sprint 9.1 does not change the ForgePy version or existing template behavior.
 
 ## Planned — Stabilization Toward v1.0
 

@@ -1,1 +1,1 @@
-"""Independent component definitions and registration."""
+"""Independent component definitions, installation contract, and registry."""
