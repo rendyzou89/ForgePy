@@ -90,11 +90,11 @@ Sprint 8.3 added a minimal standard-library command-line application template on
 
 Sprint 8.3 introduced no additional ForgePy command, release number, or delivery date.
 
-## In Progress — Sprint 8.4 Template Architecture
+## Implemented — Sprint 8.4 Template Architecture
 
-Sprint 8.4 separates the implemented templates' metadata, generation context, file mappings, and context-aware VS Code entry-point resolution without adding another template or changing generated output.
+Sprint 8.4 separated the implemented templates' metadata, generation context, file mappings, and context-aware VS Code entry-point resolution without adding another template or changing generated output. Merge commit `409f28b` incorporates the work into `master`; no newer release tag was created.
 
-| Area | Current implementation |
+| Area | Sprint 8.4 outcome |
 | --- | --- |
 | Shared execution | `FileTemplate` owns the repeated folder creation, ordered file-writing loop, and post-write VS Code entry-point resolution for all three built-ins. |
 | Generation data | Immutable `TemplateContext` keeps project and optional normalized package data separate from registry metadata. |
@@ -103,7 +103,22 @@ Sprint 8.4 separates the implemented templates' metadata, generation context, fi
 | Compatibility | Registry APIs, CLI/configuration behavior, generator sequencing, builders, generated files, and VS Code output remain unchanged. |
 | Verification | Independent snapshots cover every template-owned file; dedicated VS Code tests cover the four editor files and entry-point behavior for each built-in. |
 
-Sprint 8.4 introduces no new template, command, ForgePy version, or delivery date.
+Sprint 8.4 introduced no new template, command, ForgePy version, or delivery date.
+
+## In Progress — Sprint 9.0 Component Foundation
+
+Sprint 9.0 introduces an independent component-definition and registration foundation without adding components or connecting the catalog to project generation.
+
+| Area | Current implementation |
+| --- | --- |
+| Metadata | Immutable `ComponentMetadata` contains name, description, component version, author, and tuple tags. |
+| Contract | `BaseComponent` defines only component name and metadata; installation behavior is intentionally absent. |
+| Registry | `ComponentRegistry` starts empty and supports explicit registration, lookup by name, and immutable registration-ordered listing. |
+| Validation | Registration rejects non-components, empty or mismatched names, invalid metadata, and duplicates before changing state. |
+| Isolation | Components have no built-ins, discovery, persistence, CLI, configuration, template, builder, or generator integration. |
+| Verification | Focused standard-library tests cover metadata immutability, valid registration, lookup/listing, and rejection paths. |
+
+Sprint 9.0 currently introduces no component installation, built-in component, CLI command, ForgePy version, or delivery date.
 
 ## Planned — Stabilization Toward v1.0
 
