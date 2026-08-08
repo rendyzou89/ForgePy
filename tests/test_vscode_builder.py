@@ -145,6 +145,73 @@ class VSCodeBuilderTests(unittest.TestCase):
             self.assertNotIn("app.py", vscode_text)
             self.assertNotIn('"program"', vscode_text)
 
+    def test_cli_project_targets_generated_entry_point(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_root = self._generate_project(
+                parent=Path(temporary_directory),
+                project_name="Demo-CLI",
+                template_name="cli",
+            )
+            configuration = self._load_configuration(project_root)
+            entry_point = "demo_cli/cli.py"
+
+            self.assertTrue((project_root / entry_point).is_file())
+            self.assertEqual(
+                configuration["launch.json"],
+                {
+                    "version": "0.2.0",
+                    "configurations": [
+                        {
+                            "name": f"Python: {entry_point}",
+                            "type": "debugpy",
+                            "request": "launch",
+                            "program": (
+                                "${workspaceFolder}/"
+                                f"{entry_point}"
+                            ),
+                            "console": "integratedTerminal",
+                            "justMyCode": True,
+                        },
+                    ],
+                },
+            )
+            self.assertEqual(
+                configuration["tasks.json"],
+                {
+                    "version": "2.0.0",
+                    "tasks": [
+                        {
+                            "label": "Run Application",
+                            "type": "shell",
+                            "command": (
+                                "${workspaceFolder}\\.venv\\Scripts\\"
+                                "python.exe"
+                            ),
+                            "args": [
+                                entry_point,
+                            ],
+                            "group": {
+                                "kind": "build",
+                                "isDefault": True,
+                            },
+                            "presentation": {
+                                "reveal": "always",
+                            },
+                            "problemMatcher": [],
+                        },
+                        self._INSTALL_REQUIREMENTS_TASK,
+                    ],
+                },
+            )
+
+            vscode_text = "\n".join(
+                path.read_text(encoding="utf-8")
+                for path in (project_root / ".vscode").iterdir()
+                if path.is_file()
+            )
+
+            self.assertNotIn("app.py", vscode_text)
+
     def _generate_project(
         self,
         parent: Path,

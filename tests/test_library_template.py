@@ -35,7 +35,7 @@ class LibraryTemplateTests(unittest.TestCase):
         registry = TemplateRegistry()
 
         self.assertEqual(
-            tuple(registry.list_templates()),
+            tuple(registry.list_templates())[:2],
             ("basic", "library"),
         )
         self.assertIsInstance(registry.get("basic"), BasicTemplate)

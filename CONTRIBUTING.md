@@ -12,7 +12,7 @@ ForgePy currently uses only the Python standard library and has an empty root `r
 
 Prerequisites are Git, Python with the standard-library `venv` module, and PowerShell for the commands below. The complete generation workflow currently assumes Windows executables under `.venv\Scripts`. The repository does not yet declare a supported Python version range for ForgePy itself.
 
-Generated-project requirements are separate from ForgePy's empty root requirements file. The `basic` template declares `PySide6`, `pandas`, and `openpyxl`; the minimal `library` template writes an empty requirements file. A full create run still upgrades packaging tools, so it may require network access.
+Generated-project requirements are separate from ForgePy's empty root requirements file. The `basic` template declares `PySide6`, `pandas`, and `openpyxl`; the minimal `library` and `cli` templates write empty requirements files. A full create run still upgrades packaging tools, so it may require network access.
 
 ```powershell
 git clone <repository-url>
@@ -131,7 +131,7 @@ finally {
 }
 ```
 
-`python main.py` and `python main.py create <name> --location <existing-path> --template <basic-or-library>` are also supported, but they start or perform a side-effectful generation lifecycle. Omitted location or template options can read the current user configuration; use both explicit options for a deterministic bypass or isolate `USERPROFILE`. Run generation only with deliberate input in an isolated temporary parent directory because it may build an environment, install packages, and initialize Git.
+`python main.py` and `python main.py create <name> --location <existing-path> --template <basic-or-library-or-cli>` are also supported, but they start or perform a side-effectful generation lifecycle. Omitted location or template options can read the current user configuration; use both explicit options for a deterministic bypass or isolate `USERPROFILE`. Run generation only with deliberate input in an isolated temporary parent directory because it may build an environment, install packages, and initialize Git.
 
 ## Pull request rules
 

@@ -2,7 +2,7 @@
 
 ## Purpose and boundaries
 
-ForgePy is a Python CLI project generator. It currently provides the `basic` starter template and the minimal `library` package template, then prepares `.venv`, updates packaging tools, installs generated requirements, initializes Git, and writes VS Code configuration.
+ForgePy is a Python CLI project generator. It currently provides the `basic` starter, minimal `library`, and standard-library `cli` templates, then prepares `.venv`, updates packaging tools, installs generated requirements, initializes Git, and writes VS Code configuration.
 
 ## ForgePy Philosophy
 

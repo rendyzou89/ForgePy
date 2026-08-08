@@ -36,7 +36,7 @@ Extend commands through the shared `Command` metadata and `execute()` contract, 
 
 ### Preserve compatibility intentionally
 
-The no-command interactive create flow, the `create`, `list`, `version`, and `config show/set/reset` commands, the `basic` and `library` template names and metadata selectors, and both established generated layouts are compatibility-sensitive. Create defaults resolve in the order explicit CLI value, persisted user setting, then the existing prompt or `basic` fallback. Change these contracts only through an explicit requirement with tests or documented migration verification.
+The no-command interactive create flow, the `create`, `list`, `version`, and `config show/set/reset` commands, the `basic`, `library`, and `cli` template names and metadata selectors, and their established generated layouts are compatibility-sensitive. Create defaults resolve in the order explicit CLI value, persisted user setting, then the existing prompt or `basic` fallback. Change these contracts only through an explicit requirement with tests or documented migration verification.
 
 ### Make side effects visible
 

@@ -1,30 +1,26 @@
-"""
-==================================================
-ForgePy
-Library Template
-==================================================
-"""
-
 from pathlib import Path
 
 from builders.file_builder import FileBuilder
 from builders.folder_builder import FolderBuilder
-from templates.library.library_files import LibraryFiles
+from templates.cli.cli_files import CliFiles
 from templates.template_engine.base_template import BaseTemplate
 from templates.template_engine.package_name import normalize_package_name
 from templates.template_engine.template_metadata import TemplateMetadata
 
 
-class LibraryTemplate(BaseTemplate):
-    """Generate a minimal reusable Python package project."""
+class CliTemplate(BaseTemplate):
+    """Generate a minimal standard-library command-line application."""
 
     _METADATA = TemplateMetadata(
-        name="library",
-        description="Reusable Python package template.",
+        name="cli",
+        description="Minimal command-line application template.",
         version="0.1.0",
         author="Rendy Zou",
-        tags=("python", "library", "package"),
+        tags=("python", "cli", "argparse"),
     )
+
+    def __init__(self) -> None:
+        self._vscode_entry_point: str | None = None
 
     @property
     def metadata(self) -> TemplateMetadata:
@@ -36,7 +32,7 @@ class LibraryTemplate(BaseTemplate):
 
     @property
     def vscode_entry_point(self) -> str | None:
-        return None
+        return self._vscode_entry_point
 
     def create(
         self,
@@ -55,7 +51,7 @@ class LibraryTemplate(BaseTemplate):
         )
 
         file_builder = FileBuilder()
-        files = LibraryFiles.build(
+        files = CliFiles.build(
             project_name=project_path.name,
             package_name=package_name,
         )
@@ -66,9 +62,11 @@ class LibraryTemplate(BaseTemplate):
                 content,
             )
 
+        self._vscode_entry_point = f"{package_name}/cli.py"
+
     @staticmethod
     def _normalize_package_name(project_name: str) -> str:
         return normalize_package_name(
             project_name,
-            package_label="library",
+            package_label="CLI",
         )
