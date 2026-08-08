@@ -120,7 +120,7 @@ Sprint 9.0 introduces an independent component-definition and registration found
 
 Sprint 9.0 introduced no component installation, built-in component, CLI command, ForgePy version, or delivery date.
 
-## In Progress — Sprint 9.1 Component Installation Contract
+## Completed — Sprint 9.1 Component Installation Contract
 
 Sprint 9.1 adds only the contract required for a component to operate on an explicitly supplied existing project directory.
 
@@ -132,6 +132,19 @@ Sprint 9.1 adds only the contract required for a component to operate on an expl
 | Integration | No built-in components, CLI command, discovery, persistence, dependency resolution, rollback, plugin loading, or generation integration. |
 
 Sprint 9.1 does not change the ForgePy version or existing template behavior.
+
+## In Progress — Sprint 9.2 Component Manifest Foundation
+
+Sprint 9.2 adds only the declarative properties currently needed to describe a component installation.
+
+| Area | Current Sprint 9.2 scope |
+| --- | --- |
+| Manifest | Immutable project-relative owned or managed paths, dependencies, and conflicts. |
+| Validation | Non-empty typed entries, consistent duplicate rejection, safe lexical paths, aligned component/metadata names, and no self-dependency or self-conflict. |
+| Registry | Registration and lookup remain installation- and relationship-resolution agnostic. |
+| Integration | No built-ins, dependency resolution, installation ordering, rollback, uninstall, persistence, discovery, marketplace, CLI, template, or generation integration. |
+
+Sprint 9.2 does not change the ForgePy version or existing template behavior.
 
 ## Planned — Stabilization Toward v1.0
 

@@ -5,6 +5,7 @@ from tempfile import TemporaryDirectory
 
 from components.base_component import BaseComponent
 from components.component_context import ComponentContext
+from components.component_manifest import ComponentManifest
 from components.component_metadata import ComponentMetadata
 from components.component_registry import ComponentRegistry
 
@@ -19,15 +20,23 @@ def component_metadata(name: str = "example") -> ComponentMetadata:
     )
 
 
+def component_manifest() -> ComponentManifest:
+    return ComponentManifest()
+
+
 class ExampleComponent(BaseComponent):
 
     def __init__(
         self,
         metadata: ComponentMetadata,
         name: str | None = None,
+        manifest: ComponentManifest | None = None,
     ) -> None:
         self._metadata = metadata
         self._name = metadata.name if name is None else name
+        self._manifest = (
+            component_manifest() if manifest is None else manifest
+        )
         self.installed_contexts: list[ComponentContext] = []
 
     @property
@@ -37,6 +46,10 @@ class ExampleComponent(BaseComponent):
     @property
     def metadata(self) -> ComponentMetadata:
         return self._metadata
+
+    @property
+    def manifest(self) -> ComponentManifest:
+        return self._manifest
 
     def install(self, context: ComponentContext) -> None:
         self.installed_contexts.append(context)
@@ -52,8 +65,19 @@ class InvalidMetadataComponent(BaseComponent):
     def metadata(self) -> ComponentMetadata:
         return object()  # type: ignore[return-value]
 
+    @property
+    def manifest(self) -> ComponentManifest:
+        return component_manifest()
+
     def install(self, context: ComponentContext) -> None:
         del context
+
+
+class InvalidManifestComponent(ExampleComponent):
+
+    @property
+    def manifest(self) -> ComponentManifest:
+        return object()  # type: ignore[return-value]
 
 
 class ComponentContextTests(unittest.TestCase):
@@ -138,6 +162,27 @@ class ComponentContractTests(unittest.TestCase):
             @property
             def metadata(self) -> ComponentMetadata:
                 return component_metadata("incomplete")
+
+            @property
+            def manifest(self) -> ComponentManifest:
+                return component_manifest()
+
+        with self.assertRaises(TypeError):
+            IncompleteComponent()  # type: ignore[abstract]
+
+    def test_component_without_manifest_remains_abstract(self) -> None:
+        class IncompleteComponent(BaseComponent):
+
+            @property
+            def name(self) -> str:
+                return "incomplete"
+
+            @property
+            def metadata(self) -> ComponentMetadata:
+                return component_metadata(self.name)
+
+            def install(self, context: ComponentContext) -> None:
+                del context
 
         with self.assertRaises(TypeError):
             IncompleteComponent()  # type: ignore[abstract]
@@ -253,6 +298,20 @@ class ComponentRegistryTests(unittest.TestCase):
 
         self.assertEqual(registry.list_components(), (first, second))
 
+    def test_registration_does_not_resolve_manifest_relationships(self) -> None:
+        registry = ComponentRegistry()
+        component = ExampleComponent(
+            component_metadata(),
+            manifest=ComponentManifest(
+                dependencies=("not-registered",),
+                conflicts=("also-not-registered",),
+            ),
+        )
+
+        registry.register(component)
+
+        self.assertIs(registry.get("example"), component)
+
     def test_rejects_duplicate_component_names(self) -> None:
         registry = ComponentRegistry()
         original = ExampleComponent(component_metadata())
@@ -312,6 +371,38 @@ class ComponentRegistryTests(unittest.TestCase):
             "metadata must be ComponentMetadata",
         ):
             registry.register(InvalidMetadataComponent())
+
+        self.assertEqual(registry.list_components(), ())
+
+    def test_rejects_invalid_component_manifest(self) -> None:
+        registry = ComponentRegistry()
+
+        with self.assertRaises(TypeError):
+            registry.register(InvalidManifestComponent(component_metadata()))
+
+        self.assertEqual(registry.list_components(), ())
+
+    def test_rejects_self_dependency(self) -> None:
+        registry = ComponentRegistry()
+        component = ExampleComponent(
+            component_metadata(),
+            manifest=ComponentManifest(dependencies=("example",)),
+        )
+
+        with self.assertRaises(ValueError):
+            registry.register(component)
+
+        self.assertEqual(registry.list_components(), ())
+
+    def test_rejects_self_conflict(self) -> None:
+        registry = ComponentRegistry()
+        component = ExampleComponent(
+            component_metadata(),
+            manifest=ComponentManifest(conflicts=("example",)),
+        )
+
+        with self.assertRaises(ValueError):
+            registry.register(component)
 
         self.assertEqual(registry.list_components(), ())
 
