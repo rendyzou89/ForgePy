@@ -3,6 +3,7 @@
 from abc import ABC, abstractmethod
 
 from components.component_context import ComponentContext
+from components.component_manifest import ComponentManifest
 from components.component_metadata import ComponentMetadata
 
 
@@ -18,6 +19,11 @@ class BaseComponent(ABC):
     @abstractmethod
     def metadata(self) -> ComponentMetadata:
         """Return descriptive metadata for this component."""
+
+    @property
+    @abstractmethod
+    def manifest(self) -> ComponentManifest:
+        """Return declarative installation properties for this component."""
 
     @abstractmethod
     def install(self, context: ComponentContext) -> None:

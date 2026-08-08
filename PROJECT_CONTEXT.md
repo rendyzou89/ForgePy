@@ -6,7 +6,7 @@
 - **Purpose:** generate a structured starter Python project from a CLI, then prepare its virtual environment, dependencies, Git repository, and VS Code configuration.
 - **Protected stable branch policy:** treat `master` as protected and stable
 - **Current stable release/tag:** `v0.6.0` (`Sprint 6 Stable`)
-- **Current development area:** Sprint 9.1, adding a minimal component installation contract without application integration.
+- **Current development area:** Sprint 9.2, adding a minimal declarative component manifest without resolution or application integration.
 
 `config/version.py` is the canonical ForgePy version source and reports `0.6.0`, matching the `v0.6.0` stable release tag. No release tag newer than `v0.6.0` exists.
 
@@ -19,7 +19,7 @@ ForgePy favors understandable automation, explicit architectural boundaries, com
 - Parse and dispatch `create`, `list`, `version`, and `config` commands through one shared catalog.
 - Fall back to an interactive create workflow when no command is supplied.
 - Register the `basic`, `library`, and `cli` project templates through one validated registration path with immutable metadata.
-- Define immutable component metadata, a validated existing-project context, an abstract identity/metadata/install contract, and an empty in-memory registry with explicit registration, lookup, and ordered listing.
+- Define immutable component metadata and manifest values, a validated existing-project context, an abstract identity/metadata/manifest/install contract, and an empty in-memory registry with explicit registration, lookup, and ordered listing.
 - Generate all three built-in file templates through a shared execution layer that keeps registry metadata, project/package context, file mappings, and VS Code entry-point resolution distinct.
 - List registered template names and descriptions without invoking project generation.
 - Generate a minimal library layout with a normalized import-package directory, `tests/`, empty package initializers, shared README/Git-ignore/pyproject content, and an empty requirements file.
@@ -33,7 +33,7 @@ ForgePy favors understandable automation, explicit architectural boundaries, com
 - Resolve omitted create location and template values from `default_location` and `default_template`, after explicit CLI arguments and before the existing prompt/`basic` fallback.
 - Test configuration behavior, create-input precedence, metadata and registration, all built-in entries, list output, generated structures and execution, and template-aware VS Code output with `unittest`.
 
-The component foundation has no built-ins and is not consumed by the CLI, configuration system, templates, builders, `ProjectGenerator`, or generated projects. Components expose an installation hook that accepts only a validated existing project directory; no application flow invokes it.
+The component foundation has no built-ins and is not consumed by the CLI, configuration system, templates, builders, `ProjectGenerator`, or generated projects. Components expose immutable owned-file, dependency, and conflict declarations plus an installation hook that accepts only a validated existing project directory. No application flow invokes installation or resolves manifest relationships.
 
 `ConfigCommand` manages all persisted values. `CreateCommand` consumes only `default_location` and `default_template`; `author` and `license` remain unused. `ProjectGenerator` does not depend on `ConfigStore`. Its shared lifecycle is unchanged. `FileTemplate` performs the repeated template-local folder/file execution while each built-in retains its established layout, content, and editor requirement.
 
@@ -43,7 +43,7 @@ The component foundation has no built-ins and is not consumed by the CLI, config
 | --- | --- |
 | `builders/` | Folder/file creation and packaging-tool updates. |
 | `cli/` | Parser, dispatcher, command contract, and commands. |
-| `components/` | Immutable component metadata, validated project context, the minimal installation contract, and an empty in-memory registry. |
+| `components/` | Immutable component metadata and manifest, validated project context, the minimal installation contract, and an empty in-memory registry. |
 | `config/` | Version metadata, generated folder defaults, and user-level JSON configuration. |
 | `core/` | Project lifecycle and environment, Git, requirements, and VS Code services. |
 | `models/` | `ProjectConfig` data model. |
@@ -63,12 +63,12 @@ The root `README.md`, `requirements.txt`, and `config.py` are currently empty.
 - Subprocess failures generally propagate because commands use `check=True`.
 - Generation uses `exist_ok=True`, so an existing target can be written into rather than rejected.
 - The generated `pyproject.toml` requires Python `>=3.12`, but the ForgePy repository itself does not declare a supported Python range.
-- `ComponentRegistry` is intentionally empty, in-memory, and installation-agnostic. The component system provides no discovery, persistence, installation orchestration, CLI command, template association, or generation integration.
+- `ComponentRegistry` is intentionally empty, in-memory, installation-agnostic, and manifest-resolution agnostic. The component system provides no discovery, persistence, dependency resolution, installation ordering, rollback, uninstall, installation orchestration, CLI command, template association, or generation integration.
 - `config.default_structure.DEFAULT_FILES` is defined but unused. `BasicFiles`, `LibraryFiles`, and `CliFiles` own their complete mappings and call `TemplateManager` directly for rendered content; `TemplateFiles.basic()` remains a compatibility facade.
 
 ## Near-term priorities
 
-- Finish and verify the Sprint 9.1 component installation contract without connecting it to application behavior.
+- Finish and verify the Sprint 9.2 component manifest contract without connecting it to application behavior.
 - Keep further templates beyond `basic`, `library`, and `cli` subject to separate approval and compatibility review.
 - Keep persisted `author` and `license` values, and the configuration store itself, out of core generation and templates until a separate requirement explicitly defines that integration.
 - Continue expanding automated coverage across supported commands, lifecycle stages, and failure handling.
@@ -86,7 +86,7 @@ Use this section as the handoff point for a new developer or AI session.
 | --- | --- |
 | Stable baseline | `v0.6.0` (`Sprint 6 Stable`) |
 | Current branch policy | Repository policy treats `master` as protected; use a feature branch for implementation |
-| Active development area | Sprint 9.1 component installation contract |
+| Active development area | Sprint 9.2 component manifest foundation |
 | Implemented CLI | `create`, `list`, `version`, `config show/set/reset`, plus no-command interactive create |
 | Implemented templates | `basic`, `library`, and `cli`, all with descriptive metadata |
 | Component state | Empty independent registry; minimal install hook; no built-ins or application integration |

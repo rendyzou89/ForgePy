@@ -1,6 +1,7 @@
 """In-memory registration for component definitions."""
 
 from components.base_component import BaseComponent
+from components.component_manifest import ComponentManifest
 from components.component_metadata import ComponentMetadata
 
 
@@ -35,6 +36,19 @@ class ComponentRegistry:
             raise ValueError(
                 "Component name and metadata name must match."
             )
+
+        manifest = component.manifest
+
+        if not isinstance(manifest, ComponentManifest):
+            raise TypeError(
+                "Component manifest must be ComponentManifest."
+            )
+
+        if component_name in manifest.dependencies:
+            raise ValueError("A component must not depend on itself.")
+
+        if component_name in manifest.conflicts:
+            raise ValueError("A component must not conflict with itself.")
 
         if component_name in self._components:
             raise ValueError(
