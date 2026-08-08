@@ -19,6 +19,7 @@ ForgePy/
 |-- models/                   Project configuration data model
 |-- templates/                Generated file content and template facade
 |   |-- basic/                Basic project template implementation
+|   |-- cli/                  Minimal command-line application template
 |   |-- library/              Minimal Python library template implementation
 |   |-- template_engine/      Template contract, metadata, registry, and file mapping
 |   `-- vscode/               VS Code JSON content generators
@@ -56,9 +57,12 @@ ForgePy/
 | `core/vscode_builder.py` | Renders and writes `.vscode` files for an explicit template entry-point requirement. |
 | `builders/` | Creates folders/files and upgrades Python packaging tools. |
 | `templates/basic/basic_template.py` | Generates the established general starter layout. |
+| `templates/cli/cli_template.py` | Coordinates the normalized CLI package layout and publishes its generated editor entry point. |
+| `templates/cli/cli_files.py` | Renders the argparse application modules and minimal shared root-file mapping. |
 | `templates/library/library_template.py` | Normalizes the import-package name and coordinates the minimal library layout. |
 | `templates/library/library_files.py` | Maps shared root content and empty package initializer files for `library`. |
 | `templates/template_engine/base_template.py` | Defines the stable template name, metadata, creation, and VS Code entry-point contracts. |
+| `templates/template_engine/package_name.py` | Normalizes project names into ASCII Python package identifiers for package-oriented templates. |
 | `templates/template_engine/template_metadata.py` | Defines immutable descriptive metadata for registered templates. |
 | `templates/template_engine/template_registry.py` | Registers templates by metadata name and supplies template and metadata lookups. |
 | `templates/template_engine/template_files.py` | Maps generated root-file names to rendered content. |
@@ -68,16 +72,17 @@ ForgePy/
 | `config/version.py` | Supplies canonical application metadata. |
 | `tests/test_config_command.py` | Verifies configuration parsing, dispatch, output, persistence, reset, and error handling with an isolated home. |
 | `tests/test_create_command.py` | Verifies create-input precedence, prompting, configuration errors, and generator delegation without generating a project. |
+| `tests/test_cli_template.py` | Verifies CLI metadata, registration, exact output, normalization, module execution, help, version, and editor-entry execution. |
 | `tests/test_library_template.py` | Verifies library metadata, registration, exact output, name normalization, generator selection, and basic compatibility in temporary directories. |
 | `tests/test_template_registry.py` | Verifies metadata, registration, lookup compatibility, and list output without generation or file-system effects. |
 | `tests/test_user_config.py` | Verifies configuration behavior in temporary home directories. |
-| `tests/test_vscode_builder.py` | Verifies template-aware editor output for both built-in templates in temporary directories. |
+| `tests/test_vscode_builder.py` | Verifies template-aware editor output for all built-in templates in temporary directories. |
 
 ## Version Source
 
 `config/version.py` is the canonical source for the ForgePy application version. `VersionCommand` imports `APP_NAME` and `VERSION` from that module and adds the conventional `v` prefix only when displaying the release. Module docstrings do not duplicate release numbers.
 
-Versions rendered into generated projects, template metadata versions, and version fields required by VS Code JSON schemas are independent of the ForgePy release version. The `basic` metadata records `0.6.0` and `library` starts at `0.1.0` as independent template revisions; this does not make `config/version.py` a template-version source.
+Versions rendered into generated projects, template metadata versions, and version fields required by VS Code JSON schemas are independent of the ForgePy release version. The `basic` metadata records `0.6.0`, while `library` and `cli` start at `0.1.0` as independent template revisions; this does not make `config/version.py` a template-version source.
 
 ## User Configuration
 
@@ -137,19 +142,28 @@ flowchart TD
     Generator --> Registry
     Registry --> Basic[BasicTemplate]
     Registry --> Library[LibraryTemplate]
+    Registry --> Cli[CliTemplate]
     Basic --> TemplateMetadata
     Library --> TemplateMetadata
+    Cli --> TemplateMetadata
     Basic --> FolderBuilder[FolderBuilder]
     Basic --> TemplateFiles[TemplateFiles.basic]
     TemplateFiles --> TemplateManager[TemplateManager]
     Library --> FolderBuilder
     Library --> LibraryFiles[LibraryFiles.build]
     LibraryFiles --> TemplateManager
+    Library --> PackageName[normalize_package_name]
+    Cli --> FolderBuilder
+    Cli --> CliFiles[CliFiles.build]
+    CliFiles --> TemplateManager
+    Cli --> PackageName
     TemplateManager --> Content[Content template functions]
     Basic --> FileBuilder[FileBuilder]
     Library --> FileBuilder
+    Cli --> FileBuilder
     Basic -->|app.py| VSCodeRequirement[VS Code entry-point requirement]
     Library -->|None| VSCodeRequirement
+    Cli -->|normalized package / cli.py| VSCodeRequirement
 
     Generator --> Environment[EnvironmentBuilder]
     Generator --> PythonTools[PythonToolsBuilder]
@@ -169,7 +183,7 @@ CLI and orchestration layers depend on lower-level services. Template content mo
 - `CreateCommand` resolves explicit, persisted, and interactive/default inputs before invoking `ProjectGenerator`; `ListCommand` reads descriptive metadata from `TemplateRegistry`, `VersionCommand` reads canonical application-version metadata, and `ConfigCommand` delegates user-setting operations to `ConfigStore`.
 - `ProjectConfig` is a slotted dataclass used by `ProjectGenerator` to derive the target root.
 - `TemplateMetadata` is a frozen, slotted dataclass containing `name`, `description`, template `version`, `author`, and immutable `tags`. Construction validates scalar types, rejects empty or whitespace-only names, and snapshots tag iterables as tuples.
-- `BaseTemplate` keeps its stable `name` and `create()` contracts, supplies compatibility metadata for legacy subclasses, and exposes a compatibility `vscode_entry_point` of `"app.py"`. `BasicTemplate` explicitly retains that entry point; `LibraryTemplate` explicitly returns `None` because it has no runnable application file.
+- `BaseTemplate` keeps its stable `name` and `create()` contracts, supplies compatibility metadata for legacy subclasses, and exposes a compatibility `vscode_entry_point` of `"app.py"`. `BasicTemplate` explicitly retains that entry point; `LibraryTemplate` explicitly returns `None`; `CliTemplate` publishes its normalized package `cli.py` path after creating that file.
 - `TemplateRegistry.register()` is the single extension path. It accepts only `BaseTemplate` instances with `TemplateMetadata`, rejects empty names, requires `metadata.name` to match `template.name`, and rejects duplicates before changing registry state. It stores the template and metadata together under the authoritative metadata name. `get()` still returns the executable `BaseTemplate`; `get_metadata()` and `list_metadata()` expose descriptive data separately.
 - `list_templates()` and the public `templates` view retain their existing name-to-template dictionary shape for compatibility, but return defensive snapshots so callers cannot desynchronize registry state.
 - `BaseBuilder` is the parent of `FileBuilder`, `FolderBuilder`, and `PythonToolsBuilder`; it currently defines no methods.
@@ -177,7 +191,7 @@ CLI and orchestration layers depend on lower-level services. Template content mo
 
 ## Template system
 
-The registry registers `BasicTemplate` first and `LibraryTemplate` second through `register()`. Each registration stores its executable instance and immutable `TemplateMetadata` under the stable metadata name. `get("basic")` and `get("library")` return the corresponding creatable template, while `get_metadata()` and `list_metadata()` provide presentation data without invoking `create()`. The legacy `list_templates()` mapping remains available.
+The registry registers `BasicTemplate`, `LibraryTemplate`, and `CliTemplate` in that order through `register()`. Each registration stores its executable instance and immutable `TemplateMetadata` under the stable metadata name. `get()` returns the corresponding creatable template for `basic`, `library`, or `cli`, while `get_metadata()` and `list_metadata()` provide presentation data without invoking `create()`. The legacy `list_templates()` mapping remains available.
 
 Template metadata descriptions and tags are limited to implemented behavior. Template revisions are separate from the ForgePy application version and the version rendered into a generated project. `ListCommand` displays only metadata name and description, in registry order.
 
@@ -204,9 +218,29 @@ The mapping currently generates `README.md`, `.gitignore`, `requirements.txt`, `
 
 `LibraryFiles.build()` reuses the existing README, Git-ignore, and pyproject renderers without modifying them. The library requirements file and both initializer files are empty. The original project name remains in README and pyproject content; normalization applies only to the import-package directory.
 
-VS Code files are not part of either template's file mapping. Each template instead describes whether it has a runnable editor entry point. After the rest of project setup, `ProjectGenerator` forwards that explicit value to `VSCodeBuilder`, which calls the functions in `templates/vscode/` and writes four JSON files under `.vscode/`.
+`LibraryTemplate` and `CliTemplate` delegate package-name normalization to `templates/template_engine/package_name.py`. The helper lowercases the project name, replaces runs outside ASCII `[a-z0-9_]` with `_`, strips surrounding underscores, prefixes a leading digit, and suffixes a Python keyword. `LibraryTemplate` retains its existing private wrapper, while `CliTemplate` exposes the same local call boundary.
 
-For `basic`, the entry point is `app.py`; its existing launch configuration and `Run Application` task are preserved. For `library`, the entry point is `None`; `launch.json` has an empty `configurations` list and `tasks.json` retains only `Install Requirements`. Shared settings and extension recommendations remain unchanged. The builder does not inspect the generated filesystem to choose a profile.
+`CliTemplate.create()` uses the normalized name to create this template-owned structure:
+
+```text
+<project-root>/
+|-- <normalized-package>/
+|   |-- __init__.py
+|   |-- __main__.py
+|   `-- cli.py
+|-- tests/
+|   `-- __init__.py
+|-- .gitignore
+|-- README.md
+|-- pyproject.toml
+`-- requirements.txt
+```
+
+`CliFiles.build()` reuses the shared README, Git-ignore, and pyproject renderers and writes empty requirements and initializer files. Its generated `cli.py` uses `argparse`, exposes help and version options, returns success with no arguments, and can run directly. Package `__main__.py` delegates to that interface, enabling `python -m <normalized-package>`. The generated application version is a fixed `0.1.0` independent of ForgePy and template metadata.
+
+VS Code files are not part of a template's file mapping. Each template instead describes whether it has a runnable editor entry point. After the rest of project setup, `ProjectGenerator` forwards that explicit value to `VSCodeBuilder`, which calls the functions in `templates/vscode/` and writes four JSON files under `.vscode/`.
+
+For `basic`, the entry point is `app.py`; its existing launch configuration and `Run Application` task are preserved. For `library`, the entry point is `None`; `launch.json` has an empty `configurations` list and `tasks.json` retains only `Install Requirements`. During `CliTemplate.create()`, the template records `<normalized-package>/cli.py` only after writing it; the unchanged file-based launch and run-task renderers then target that real, directly executable file. Shared settings, requirements tasks, and extension recommendations remain unchanged. The builder does not inspect the generated filesystem to choose a profile.
 
 ## CLI flow
 
@@ -280,7 +314,7 @@ sequenceDiagram
     participant G as ProjectGenerator
     participant TR as TemplateRegistry
     participant T as Selected BaseTemplate
-    participant F as TemplateFiles / LibraryFiles
+    participant F as TemplateFiles / LibraryFiles / CliFiles
     participant TM as TemplateManager / content functions
     participant B as FolderBuilder / FileBuilder
     participant E as Environment tooling
@@ -324,14 +358,15 @@ The current implementation uses Windows executable paths such as `.venv/Scripts/
 ## Known limitations and technical debt
 
 - The full generation lifecycle assumes Windows `.venv/Scripts/*.exe` paths.
-- Automated coverage includes user configuration, create-input resolution, template metadata and registry behavior, list output, both built-in template structures, template-aware VS Code output, and isolated selection through `ProjectGenerator`; the real external lifecycle and other application areas remain uncovered.
+- Automated coverage includes user configuration, create-input resolution, template metadata and registry behavior, list output, all built-in structures, generated CLI subprocess behavior, template-aware VS Code output, and isolated selection through `ProjectGenerator`; the real external lifecycle and other application areas remain uncovered.
 - `author` and `license` are persisted but not applied to generated content.
 - `TemplateRegistry.get()` raises `KeyError` for unknown names rather than producing a command-level error.
-- Template metadata has no independent versioning policy yet; `basic` records `0.6.0` and `library` starts at `0.1.0` as template-specific revisions.
+- Template metadata has no independent versioning policy yet; `basic` records `0.6.0`, while `library` and `cli` start at `0.1.0` as template-specific revisions.
 - Most subprocess failures propagate; only the initial Git commit has local error handling.
 - The generator writes into an existing project root because it uses `exist_ok=True`.
 - `BaseBuilder` has no behavioral contract, and core builder-style services do not share its inheritance hierarchy.
-- `config.default_structure.DEFAULT_FILES` is currently unused; `TemplateFiles.basic()` and `LibraryFiles.build()` are authoritative for their respective generated files.
+- `config.default_structure.DEFAULT_FILES` is currently unused; `TemplateFiles.basic()`, `LibraryFiles.build()`, and `CliFiles.build()` are authoritative for their respective generated files.
+- `CliTemplate.vscode_entry_point` is derived during `create()` and is `None` before the generated `cli.py` has been written.
 - The root README, requirements file, root `config.py`, and utility logger are empty.
 
 ## Safe extension rules
@@ -350,7 +385,7 @@ Apply the design principles and Definition of Done in [`ENGINEERING_PRINCIPLES.m
 - Implement `BaseTemplate` with `TemplateMetadata`: a non-empty stable `name`; factual string `description`; string template `version` and `author`; and an iterable of string `tags` stored as a tuple.
 - Keep the metadata name aligned with `BaseTemplate.name`, keep rendered content separate from file writes, and register through `TemplateRegistry.register()`.
 - Explicitly declare `vscode_entry_point`: use the real generated path for a runnable template or `None` when no application entry point exists. Do not infer it from the filesystem.
-- Do not change the `basic` or `library` names or output contracts incidentally.
+- Do not change the `basic`, `library`, or `cli` names or output contracts incidentally.
 - Verify metadata registration, registry listing and selection, generated folders/files, and template-matched VS Code JSON in an isolated location.
 
 ### User Configuration

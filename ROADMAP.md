@@ -48,7 +48,7 @@ Sprint 7 behavior is covered by focused configuration and create-resolution test
 
 ## Implemented — Sprint 8.1 Template Metadata
 
-Sprint 8.1 introduced descriptive metadata as the registry and listing foundation for future templates. Commit `484278a` records this work on the current feature lineage; it is not yet part of `master` and has no newer release tag.
+Sprint 8.1 introduced descriptive metadata as the registry and listing foundation for future templates. Commit `484278a` records the implementation, and merge commit `41de327` incorporates it into `master`; no newer release tag was created.
 
 | Area | Sprint 8.1 outcome |
 | --- | --- |
@@ -59,11 +59,11 @@ Sprint 8.1 introduced descriptive metadata as the registry and listing foundatio
 
 Sprint 8.1 includes focused metadata, registry, and list-output tests plus the existing CLI regression suite.
 
-## In Progress — Sprint 8.2 Library Template
+## Implemented — Sprint 8.2 Library Template
 
-Sprint 8.2 adds the first additional built-in template without changing the shared generator lifecycle.
+Sprint 8.2 added the first additional built-in template without changing the shared generator lifecycle. Merge commit `72b8359` incorporates the work into `master`; no newer release tag was created.
 
-| Area | Current implementation |
+| Area | Sprint 8.2 outcome |
 | --- | --- |
 | Built-in catalog | `TemplateRegistry` registers `basic` first and `library` second through the existing validated API. |
 | Library metadata | `library` has its own name, description, template revision, author, and tags. |
@@ -72,7 +72,23 @@ Sprint 8.2 adds the first additional built-in template without changing the shar
 | Compatibility | The `basic` selector, metadata, generated folders/files, default selection, and existing VS Code behavior remain unchanged. |
 | Verification | Focused tests cover registration, metadata, exact structures, package-name normalization, generator selection, and template-aware VS Code output. |
 
-Sprint 8.2 introduces no further template types, release number, or delivery date.
+Sprint 8.2 introduced no further template types, release number, or delivery date.
+
+## In Progress — Sprint 8.3 CLI Template
+
+Sprint 8.3 adds a minimal standard-library command-line application template on the existing registry and editor-configuration contracts.
+
+| Area | Current implementation |
+| --- | --- |
+| Built-in catalog | `TemplateRegistry` registers `cli` after the established `basic` and `library` templates. |
+| CLI metadata | `cli` has a factual description, independent template revision, author, and Python/CLI/argparse tags. |
+| Generated layout | A normalized package contains `__init__.py`, `__main__.py`, and `cli.py`; `tests/` has an initializer and shared root files remain minimal. |
+| Runtime behavior | The generated package runs with `python -m`, and argparse provides help and version output without third-party dependencies. |
+| Editor compatibility | The template publishes its generated `cli.py` path so VS Code launch and run tasks reference a real executable file. |
+| Compatibility | The existing templates, default selection, CLI/configuration architecture, builders, and generator lifecycle remain unchanged. |
+| Verification | Focused tests cover registration, metadata, exact output, normalization, subprocess execution, editor JSON, and existing-template regressions. |
+
+Sprint 8.3 introduces no additional ForgePy command, release number, or delivery date.
 
 ## Planned — Stabilization Toward v1.0
 
@@ -85,14 +101,14 @@ These are outcome-oriented priorities, not guaranteed feature commitments.
 
 ### Verification and Failure Behavior
 
-- Expand automated coverage beyond configuration and create-input resolution to template output, builders, the generator lifecycle, and subprocess boundaries.
+- Continue expanding automated coverage across builders, the full generator lifecycle, and subprocess failure boundaries.
 - Define predictable validation for unknown templates, missing tools, failed subprocesses, and existing target paths.
 - Retain documented manual checks until automated infrastructure covers them.
 
 ### Compatibility and Support
 
 - Document supported Python and operating-system ranges based on verified behavior.
-- Stabilize the CLI contract, the `basic` and `library` template names and outputs, and the project-generation lifecycle.
+- Stabilize the CLI contract, all three built-in template names and outputs, and the project-generation lifecycle.
 - Define a template-metadata version policy before independently evolving template revisions.
 - Provide migration notes for any intentionally incompatible pre-1.0 change.
 
@@ -103,6 +119,6 @@ ForgePy is ready for a v1.0 proposal when the current public behavior is consist
 ## Ideas — Not Scheduled
 
 - Evaluate portability beyond the current Windows-oriented virtual-environment paths.
-- Evaluate further commands or templates beyond `basic` and `library` only after a concrete use case and compatibility review.
+- Evaluate further commands or templates beyond `basic`, `library`, and `cli` only after a concrete use case and compatibility review.
 
 Ideas become planned work only after maintainer approval, defined acceptance criteria, and an identified verification approach.
