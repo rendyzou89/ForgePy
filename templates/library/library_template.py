@@ -7,15 +7,14 @@ Library Template
 
 from pathlib import Path
 
-from builders.file_builder import FileBuilder
-from builders.folder_builder import FolderBuilder
 from templates.library.library_files import LibraryFiles
-from templates.template_engine.base_template import BaseTemplate
+from templates.template_engine.file_template import FileTemplate
 from templates.template_engine.package_name import normalize_package_name
+from templates.template_engine.template_context import TemplateContext
 from templates.template_engine.template_metadata import TemplateMetadata
 
 
-class LibraryTemplate(BaseTemplate):
+class LibraryTemplate(FileTemplate):
     """Generate a minimal reusable Python package project."""
 
     _METADATA = TemplateMetadata(
@@ -26,45 +25,28 @@ class LibraryTemplate(BaseTemplate):
         tags=("python", "library", "package"),
     )
 
-    @property
-    def metadata(self) -> TemplateMetadata:
-        return self._METADATA
+    _DEFAULT_VSCODE_ENTRY_POINT = None
 
-    @property
-    def name(self) -> str:
-        return self.metadata.name
-
-    @property
-    def vscode_entry_point(self) -> str | None:
-        return None
-
-    def create(
+    def _build_context(
         self,
         project_path: Path,
-    ) -> None:
-        package_name = self._normalize_package_name(
-            project_path.name,
+    ) -> TemplateContext:
+        return TemplateContext(
+            project_path=project_path,
+            package_name=self._normalize_package_name(project_path.name),
         )
 
-        FolderBuilder().create(
-            project_path,
-            [
-                package_name,
-                "tests",
-            ],
+    def _folders(self, context: TemplateContext) -> tuple[str, ...]:
+        return (
+            context.require_package_name(),
+            "tests",
         )
 
-        file_builder = FileBuilder()
-        files = LibraryFiles.build(
-            project_name=project_path.name,
-            package_name=package_name,
+    def _files(self, context: TemplateContext) -> dict[str, str]:
+        return LibraryFiles.build(
+            project_name=context.project_name,
+            package_name=context.require_package_name(),
         )
-
-        for filename, content in files.items():
-            file_builder.write(
-                project_path / filename,
-                content,
-            )
 
     @staticmethod
     def _normalize_package_name(project_name: str) -> str:
