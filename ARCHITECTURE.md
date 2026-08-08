@@ -2,7 +2,7 @@
 
 ## Overview
 
-ForgePy is a layered command-line application. The CLI parses user input and selects a command, the create command delegates to `ProjectGenerator`, and the generator coordinates template rendering and setup services. The template registry keeps descriptive metadata alongside executable templates so listing does not invoke generation. Built-in templates separate per-generation context, template-owned file mappings, and explicit VS Code entry-point rules; their common execution layer delegates folder and file writes to the existing builders.
+ForgePy is a layered command-line application. The CLI parses user input and selects a command, the create command delegates to `ProjectGenerator`, and the generator coordinates template rendering and setup services. The template registry keeps descriptive metadata alongside executable templates so listing does not invoke generation. Built-in templates separate per-generation context, template-owned file mappings, and explicit VS Code entry-point rules; their common execution layer delegates folder and file writes to the existing builders. An independent component package currently provides metadata and an empty in-memory registry only; it is not connected to the application or generation flow.
 
 ## Directory structure
 
@@ -11,6 +11,10 @@ ForgePy/
 |-- builders/                 Reusable file-system and Python-tool builders
 |-- cli/                      Argument parsing, dispatch, and command objects
 |   `-- commands/             Implementations and the shared command catalog
+|-- components/               Independent component metadata and empty registry
+|   |-- base_component.py     Abstract component identity/metadata contract
+|   |-- component_metadata.py Immutable descriptive component metadata
+|   `-- component_registry.py In-memory explicit component registration
 |-- config/                   Application and user configuration
 |   |-- default_structure.py  Generated project layout defaults
 |   |-- user_config.py        Persistent user configuration store
@@ -56,6 +60,9 @@ ForgePy/
 | `core/git_builder.py` | Initializes Git, stages files, and attempts the initial commit. |
 | `core/vscode_builder.py` | Renders and writes `.vscode` files for an explicit template entry-point requirement. |
 | `builders/` | Creates folders/files and upgrades Python packaging tools. |
+| `components/base_component.py` | Defines abstract component `name` and `metadata` properties without installation or execution behavior. |
+| `components/component_metadata.py` | Defines immutable descriptive metadata for component definitions. |
+| `components/component_registry.py` | Validates explicit in-memory registrations and provides lookup and immutable ordered listing. |
 | `templates/basic/basic_template.py` | Declares the basic metadata, folders, file mapping, and `app.py` VS Code default through shared execution hooks. |
 | `templates/basic/basic_files.py` | Owns the complete basic-template mapping and renders its content through `TemplateManager`. |
 | `templates/cli/cli_template.py` | Declares the normalized CLI context, folders, file mapping, and context-derived VS Code entry point. |
@@ -73,6 +80,7 @@ ForgePy/
 | `config/default_structure.py` | Supplies the basic generated-project directory list. |
 | `config/user_config.py` | Loads, validates, updates, resets, and atomically saves user-level JSON configuration. |
 | `config/version.py` | Supplies canonical application metadata. |
+| `tests/test_component_registry.py` | Verifies component metadata, empty registry state, registration, lookup, listing order, and rejection paths without side effects. |
 | `tests/test_config_command.py` | Verifies configuration parsing, dispatch, output, persistence, reset, and error handling with an isolated home. |
 | `tests/test_create_command.py` | Verifies create-input precedence, prompting, configuration errors, and generator delegation without generating a project. |
 | `tests/test_cli_template.py` | Verifies CLI metadata, registration, exact output, normalization, module execution, help, version, and editor-entry execution. |
@@ -142,6 +150,12 @@ flowchart TD
     Config --> UserConfig[ConfigStore]
     UserConfig --> ConfigFile[~/.forgepy/config.json]
 
+    subgraph ComponentFoundation[Independent component foundation]
+        ComponentRegistry[ComponentRegistry] --> BaseComponent[BaseComponent]
+        ComponentRegistry --> ComponentMetadata[ComponentMetadata]
+        BaseComponent --> ComponentMetadata
+    end
+
     Generator --> ProjectConfig[ProjectConfig]
     Generator --> Registry
     Registry --> Basic[BasicTemplate]
@@ -177,7 +191,7 @@ flowchart TD
     VSCode --> VSCodeTemplates[templates.vscode]
 ```
 
-CLI and orchestration layers depend on lower-level services. Template content modules do not depend on the CLI or generator. Builders receive paths and content rather than parsing arguments or selecting templates.
+CLI and orchestration layers depend on lower-level services. Template content modules do not depend on the CLI or generator. Builders receive paths and content rather than parsing arguments or selecting templates. No dependency connects the component foundation to `main.py`, CLI commands, configuration, templates, builders, `ProjectGenerator`, or generated projects.
 
 ## Class relationships
 
@@ -186,6 +200,9 @@ CLI and orchestration layers depend on lower-level services. Template content mo
 - `Dispatcher` derives its CLI-name mapping from that catalog.
 - `CreateCommand` resolves explicit, persisted, and interactive/default inputs before invoking `ProjectGenerator`; `ListCommand` reads descriptive metadata from `TemplateRegistry`, `VersionCommand` reads canonical application-version metadata, and `ConfigCommand` delegates user-setting operations to `ConfigStore`.
 - `ProjectConfig` is a slotted dataclass used by `ProjectGenerator` to derive the target root.
+- `ComponentMetadata` is a frozen, slotted dataclass containing `name`, `description`, component `version`, `author`, and immutable `tags`. Construction validates scalar types, rejects empty or whitespace-only names, and snapshots tag iterables as tuples.
+- `BaseComponent` exposes only abstract `name` and `metadata` properties. It defines no installation, execution, project, or file-system hook.
+- `ComponentRegistry` starts empty, stores component instances directly, requires matching component and metadata names, rejects duplicates before mutation, preserves registration order, and returns an immutable tuple from `list_components()`.
 - `TemplateMetadata` is a frozen, slotted dataclass containing `name`, `description`, template `version`, `author`, and immutable `tags`. Construction validates scalar types, rejects empty or whitespace-only names, and snapshots tag iterables as tuples.
 - `BaseTemplate` remains the stable public `name`, `create()`, metadata, and `vscode_entry_point` contract. Its compatibility defaults for legacy subclasses are unchanged.
 - `FileTemplate` is an opt-in `BaseTemplate` implementation used by the three built-ins. It derives `name` from the class's immutable metadata, builds a `TemplateContext`, creates declared folders, writes the ordered template-owned mapping through `FileBuilder`, and assigns its resolved VS Code entry point only after all writes succeed. `_DEFAULT_VSCODE_ENTRY_POINT` supplies static behavior, while `_vscode_entry_point_for(context)` resolves context-derived paths.
@@ -195,6 +212,12 @@ CLI and orchestration layers depend on lower-level services. Template content mo
 - `list_templates()` and the public `templates` view retain their existing name-to-template dictionary shape for compatibility, but return defensive snapshots so callers cannot desynchronize registry state.
 - `BaseBuilder` is the parent of `FileBuilder`, `FolderBuilder`, and `PythonToolsBuilder`; it currently defines no methods.
 - Core builder-style services are coordinated directly by `ProjectGenerator` and do not inherit from `BaseBuilder`.
+
+## Component registry foundation
+
+ForgePy currently registers no built-in components. `ComponentRegistry` is an in-memory catalog only: `register(component)` validates and stores one `BaseComponent`, `get(name)` returns the registered instance or preserves the standard `KeyError`, and `list_components()` returns an immutable tuple in registration order.
+
+`ComponentMetadata` and `BaseComponent` are independent from `TemplateMetadata`, `BaseTemplate`, and `TemplateRegistry`; neither registry imports or registers objects from the other system. The component foundation performs no discovery, persistence, dependency resolution, installation, CLI presentation, template association, or generation integration.
 
 ## Template system
 
@@ -377,13 +400,14 @@ The current implementation uses Windows executable paths such as `.venv/Scripts/
 ## Known limitations and technical debt
 
 - The full generation lifecycle assumes Windows `.venv/Scripts/*.exe` paths.
-- Automated coverage includes user configuration, create-input resolution, template metadata and registry behavior, list output, shared template contracts, exact normalized template-owned file snapshots, all built-in structures, generated CLI subprocess behavior, template-aware VS Code behavior, and isolated selection through `ProjectGenerator`; the real external lifecycle and other application areas remain uncovered.
+- Automated coverage includes component metadata and registry behavior, user configuration, create-input resolution, template metadata and registry behavior, list output, shared template contracts, exact normalized template-owned file snapshots, all built-in structures, generated CLI subprocess behavior, template-aware VS Code behavior, and isolated selection through `ProjectGenerator`; the real external lifecycle and other application areas remain uncovered.
 - `author` and `license` are persisted but not applied to generated content.
 - `TemplateRegistry.get()` raises `KeyError` for unknown names rather than producing a command-level error.
 - Template metadata has no independent versioning policy yet; `basic` records `0.6.0`, while `library` and `cli` start at `0.1.0` as template-specific revisions.
 - Most subprocess failures propagate; only the initial Git commit has local error handling.
 - The generator writes into an existing project root because it uses `exist_ok=True`.
 - `BaseBuilder` has no behavioral contract, and core builder-style services do not share its inheritance hierarchy.
+- `ComponentRegistry` is intentionally empty and in-memory. Component discovery, persistence, dependencies, installation, CLI exposure, template association, and generation integration are undefined.
 - `config.default_structure.DEFAULT_FILES` is currently unused. `BasicFiles`, `LibraryFiles`, and `CliFiles` own their mappings; `TemplateFiles.basic()` is retained only as a compatibility facade.
 - `CliTemplate` retains per-instance resolved entry-point state. `vscode_entry_point` reports `None` before the generated `cli.py` has been written and is recomputed for each successful `create()` call.
 - The compatibility `TemplateFiles.basic()` facade creates a deliberate template-engine-to-Basic dependency until an explicit compatibility change removes the older API.
@@ -408,6 +432,12 @@ Apply the design principles and Definition of Done in [`ENGINEERING_PRINCIPLES.m
 - Declare `_DEFAULT_VSCODE_ENTRY_POINT` for static behavior or override `_vscode_entry_point_for(context)` for a derived path. Use the real generated path or `None`, and do not infer it from the filesystem.
 - Do not change the `basic`, `library`, or `cli` names or output contracts incidentally.
 - Verify metadata registration, registry listing and selection, generated folders/files, and template-matched VS Code JSON in an isolated location.
+
+### Components
+
+- Register only `BaseComponent` implementations with valid `ComponentMetadata` and matching non-empty names.
+- Keep a new `ComponentRegistry` empty until a built-in component is explicitly approved.
+- Treat installation, persistence, discovery, dependency handling, CLI exposure, template association, and generation integration as separate future requirements.
 
 ### User Configuration
 

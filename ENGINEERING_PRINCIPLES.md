@@ -21,6 +21,7 @@ The project favors:
 - `cli/` owns parsing, command selection, and command-level validation.
 - `core/ProjectGenerator` owns project-generation sequencing.
 - Builders and core tooling services own focused side effects.
+- `components/` owns the independent component-definition contract and empty in-memory registry.
 - `templates/` owns registration metadata, per-generation context, rendered file definitions, and template-specific VS Code entry-point decisions.
 - `models/` carries project data; `config/` owns application metadata, generated-layout defaults, and isolated user-configuration persistence.
 
@@ -30,9 +31,13 @@ Dependencies should follow those boundaries. Templates and builders must not dep
 
 Template selection belongs to `TemplateRegistry`; `TemplateMetadata` describes registrations; `TemplateContext` carries project/package data; template-local mappings define content; and each built-in resolves an explicit VS Code entry point from a static default or generation context. Common `FileTemplate` execution delegates disk writes to focused builders. `ProjectGenerator` may forward explicit requirements while remaining orchestration-only. CLI prompting must not leak into builders or templates.
 
+`ComponentRegistry` catalogs component definitions only. Registration and lookup do not install packages, select templates, modify generated files, or trigger other side effects.
+
 ### Prefer small contracts
 
 Extend commands through the shared `Command` metadata and `execute()` contract, override `configure_parser()` when arguments are required, and add built-in commands to the explicit catalog in `cli.commands`. Preserve the public `BaseTemplate` contract; built-in file templates use the focused `FileTemplate` hooks for context, folders, files, and VS Code entry-point resolution. Keep descriptive metadata in the template registry rather than builders or rendered content. Keep inputs explicit, use type hints, and pass `pathlib.Path` objects at file-system boundaries.
+
+Extend the component catalog through `BaseComponent`, `ComponentMetadata`, and explicit `ComponentRegistry.register()` calls; keep the default catalog empty.
 
 ### Preserve compatibility intentionally
 
@@ -69,7 +74,7 @@ A change is done only when all applicable items are true:
 Reviewers should confirm:
 
 - [ ] The change solves the stated problem without expanding scope unnecessarily.
-- [ ] CLI parsing, orchestration, builders, templates, configuration, and models retain clear responsibilities.
+- [ ] CLI parsing, orchestration, builders, components, templates, configuration, and models retain clear responsibilities.
 - [ ] Dependency flow remains inward and no avoidable circular dependency is introduced.
 - [ ] External commands and file writes have explicit paths, predictable failures, and appropriate user feedback.
 - [ ] Unknown, empty, existing-path, and missing-tool cases are considered where relevant.
