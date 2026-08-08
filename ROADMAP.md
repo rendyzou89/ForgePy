@@ -74,11 +74,11 @@ Sprint 8.2 added the first additional built-in template without changing the sha
 
 Sprint 8.2 introduced no further template types, release number, or delivery date.
 
-## In Progress — Sprint 8.3 CLI Template
+## Implemented — Sprint 8.3 CLI Template
 
-Sprint 8.3 adds a minimal standard-library command-line application template on the existing registry and editor-configuration contracts.
+Sprint 8.3 added a minimal standard-library command-line application template on the existing registry and editor-configuration contracts. Merge commit `f9ae27c` incorporates the work into `master`; no newer release tag was created.
 
-| Area | Current implementation |
+| Area | Sprint 8.3 outcome |
 | --- | --- |
 | Built-in catalog | `TemplateRegistry` registers `cli` after the established `basic` and `library` templates. |
 | CLI metadata | `cli` has a factual description, independent template revision, author, and Python/CLI/argparse tags. |
@@ -88,7 +88,22 @@ Sprint 8.3 adds a minimal standard-library command-line application template on 
 | Compatibility | The existing templates, default selection, CLI/configuration architecture, builders, and generator lifecycle remain unchanged. |
 | Verification | Focused tests cover registration, metadata, exact output, normalization, subprocess execution, editor JSON, and existing-template regressions. |
 
-Sprint 8.3 introduces no additional ForgePy command, release number, or delivery date.
+Sprint 8.3 introduced no additional ForgePy command, release number, or delivery date.
+
+## In Progress — Sprint 8.4 Template Architecture
+
+Sprint 8.4 separates the implemented templates' metadata, generation context, file mappings, and context-aware VS Code entry-point resolution without adding another template or changing generated output.
+
+| Area | Current implementation |
+| --- | --- |
+| Shared execution | `FileTemplate` owns the repeated folder creation, ordered file-writing loop, and post-write VS Code entry-point resolution for all three built-ins. |
+| Generation data | Immutable `TemplateContext` keeps project and optional normalized package data separate from registry metadata. |
+| File ownership | `BasicFiles`, `LibraryFiles`, and `CliFiles` own complete mappings and call `TemplateManager` directly for the root content they share. |
+| VS Code entry points | Per-template defaults and the CLI context hook preserve the existing `vscode_entry_point` compatibility property. |
+| Compatibility | Registry APIs, CLI/configuration behavior, generator sequencing, builders, generated files, and VS Code output remain unchanged. |
+| Verification | Independent snapshots cover every template-owned file; dedicated VS Code tests cover the four editor files and entry-point behavior for each built-in. |
+
+Sprint 8.4 introduces no new template, command, ForgePy version, or delivery date.
 
 ## Planned — Stabilization Toward v1.0
 

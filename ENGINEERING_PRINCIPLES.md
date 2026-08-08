@@ -21,18 +21,18 @@ The project favors:
 - `cli/` owns parsing, command selection, and command-level validation.
 - `core/ProjectGenerator` owns project-generation sequencing.
 - Builders and core tooling services own focused side effects.
-- `templates/` owns rendered content and template registration.
+- `templates/` owns registration metadata, per-generation context, rendered file definitions, and template-specific VS Code entry-point decisions.
 - `models/` carries project data; `config/` owns application metadata, generated-layout defaults, and isolated user-configuration persistence.
 
 Dependencies should follow those boundaries. Templates and builders must not depend back on the CLI.
 
 ### Separate decisions, content, and side effects
 
-Template selection belongs to `TemplateRegistry`, content construction and template-specific editor requirements belong to templates, and disk writes belong to focused builders or core services. `ProjectGenerator` may forward explicit requirements while remaining orchestration-only. CLI prompting must not leak into builders or templates.
+Template selection belongs to `TemplateRegistry`; `TemplateMetadata` describes registrations; `TemplateContext` carries project/package data; template-local mappings define content; and each built-in resolves an explicit VS Code entry point from a static default or generation context. Common `FileTemplate` execution delegates disk writes to focused builders. `ProjectGenerator` may forward explicit requirements while remaining orchestration-only. CLI prompting must not leak into builders or templates.
 
 ### Prefer small contracts
 
-Extend commands through the shared `Command` metadata and `execute()` contract, override `configure_parser()` when arguments are required, and add built-in commands to the explicit catalog in `cli.commands`. Extend templates through `BaseTemplate` and its `TemplateMetadata` contract. Keep descriptive metadata in the template registry rather than builders or rendered content. Keep inputs explicit, use type hints, and pass `pathlib.Path` objects at file-system boundaries.
+Extend commands through the shared `Command` metadata and `execute()` contract, override `configure_parser()` when arguments are required, and add built-in commands to the explicit catalog in `cli.commands`. Preserve the public `BaseTemplate` contract; built-in file templates use the focused `FileTemplate` hooks for context, folders, files, and VS Code entry-point resolution. Keep descriptive metadata in the template registry rather than builders or rendered content. Keep inputs explicit, use type hints, and pass `pathlib.Path` objects at file-system boundaries.
 
 ### Preserve compatibility intentionally
 

@@ -5,19 +5,14 @@ Basic Template
 ==================================================
 """
 
-from pathlib import Path
-
-from builders.file_builder import FileBuilder
-from builders.folder_builder import FolderBuilder
-
 from config.default_structure import DEFAULT_FOLDERS
-
-from templates.template_engine.base_template import BaseTemplate
-from templates.template_engine.template_files import TemplateFiles
+from templates.basic.basic_files import BasicFiles
+from templates.template_engine.file_template import FileTemplate
+from templates.template_engine.template_context import TemplateContext
 from templates.template_engine.template_metadata import TemplateMetadata
 
 
-class BasicTemplate(BaseTemplate):
+class BasicTemplate(FileTemplate):
 
     _METADATA = TemplateMetadata(
         name="basic",
@@ -27,37 +22,11 @@ class BasicTemplate(BaseTemplate):
         tags=("python", "basic"),
     )
 
-    @property
-    def metadata(self) -> TemplateMetadata:
-        return self._METADATA
+    _DEFAULT_VSCODE_ENTRY_POINT = "app.py"
 
-    @property
-    def name(self) -> str:
-        return self.metadata.name
+    def _folders(self, context: TemplateContext) -> tuple[str, ...]:
+        del context
+        return tuple(DEFAULT_FOLDERS)
 
-    @property
-    def vscode_entry_point(self) -> str | None:
-        return "app.py"
-
-    def create(
-        self,
-        project_path: Path,
-    ) -> None:
-
-        FolderBuilder().create(
-            project_path,
-            DEFAULT_FOLDERS,
-        )
-
-        fb = FileBuilder()
-
-        files = TemplateFiles.basic(
-            project_path.name,
-        )
-
-        for filename, content in files.items():
-
-            fb.write(
-                project_path / filename,
-                content,
-            )
+    def _files(self, context: TemplateContext) -> dict[str, str]:
+        return BasicFiles.build(context.project_name)

@@ -13,7 +13,7 @@ Preserve these boundaries:
 - `cli/` parses and dispatches commands; commands delegate work.
 - `core/ProjectGenerator` owns generation order.
 - `builders/` performs focused file-system or Python-tool operations.
-- `templates/` owns descriptive metadata, rendered content, and template-specific editor requirements; `TemplateRegistry` registers and selects `BaseTemplate` implementations.
+- `templates/` owns descriptive metadata, per-generation context, rendered content, and explicit template-specific VS Code entry-point requirements; `TemplateRegistry` registers and selects `BaseTemplate` implementations.
 - `models/` carries project data; `config/` owns application metadata, generated-layout defaults, and isolated user-configuration persistence.
 
 Do not silently move responsibilities between these areas or perform broad refactors for a focused change.
@@ -30,9 +30,10 @@ Do not silently move responsibilities between these areas or perform broad refac
 - Follow PEP 8, use Python type hints, `pathlib.Path`, UTF-8 text I/O, four-space indentation, and clear names.
 - Keep CLI parsing in `Parser`, routing in `Dispatcher`, and behavior in `Command` implementations.
 - Keep builders single-purpose; do not add prompting or template selection to builders.
-- Implement templates through `BaseTemplate` and expose explicit `TemplateMetadata` with a non-empty stable `name`; string `description`, `version`, and `author`; and an iterable of string `tags` stored as a tuple. Keep rendering separate from writes and register templates through `TemplateRegistry.register()`.
+- Implement built-in file-mapping templates through `FileTemplate` while preserving the `BaseTemplate` public contract. Keep `TemplateMetadata`, per-generation `TemplateContext`, and template-owned file mappings separate, and register templates through `TemplateRegistry.register()`.
+- Give metadata a non-empty stable `name`; string `description`, `version`, and `author`; and an iterable of string `tags` stored as a tuple. Keep rendering separate from writes; common `FileTemplate` execution may delegate folder and file side effects only to the existing builders.
 - Treat metadata as registry and presentation data. Keep its name aligned with the stable template selector, and never let metadata-only changes alter `create()` or generated output.
-- Keep each built-in template's VS Code entry-point requirement explicit. `ProjectGenerator` may forward it, while `VSCodeBuilder` remains responsible for rendering and writing editor files; do not infer the requirement from generated paths.
+- Keep each built-in template's VS Code entry-point requirement explicit through `FileTemplate`'s default or context hook. `ProjectGenerator` may forward the `vscode_entry_point` compatibility property, while `VSCodeBuilder` remains responsible for rendering and writing editor files; do not infer the requirement from generated paths. A `FileTemplate` subclass that overrides `__init__()` must call `super().__init__()`.
 - Keep lifecycle sequencing in `ProjectGenerator`; preserve no-command dispatch to `create`, with project-name and unresolved-location prompts unchanged.
 - Resolve create inputs in `CreateCommand` using explicit CLI values, then `default_location`/`default_template`, then the existing prompt/`basic` fallback. Keep `ProjectGenerator`, builders, and templates independent of `ConfigStore`.
 - Do not apply persisted `author` or `license` values to generated files without an explicit requirement.

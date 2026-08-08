@@ -6,7 +6,7 @@
 - **Purpose:** generate a structured starter Python project from a CLI, then prepare its virtual environment, dependencies, Git repository, and VS Code configuration.
 - **Protected stable branch policy:** treat `master` as protected and stable
 - **Current stable release/tag:** `v0.6.0` (`Sprint 6 Stable`)
-- **Current development area:** Sprint 8.3, adding the minimal standard-library `cli` template.
+- **Current development area:** Sprint 8.4, modularizing the implemented template architecture without changing generated output.
 
 `config/version.py` is the canonical ForgePy version source and reports `0.6.0`, matching the `v0.6.0` stable release tag. No release tag newer than `v0.6.0` exists.
 
@@ -19,6 +19,7 @@ ForgePy favors understandable automation, explicit architectural boundaries, com
 - Parse and dispatch `create`, `list`, `version`, and `config` commands through one shared catalog.
 - Fall back to an interactive create workflow when no command is supplied.
 - Register the `basic`, `library`, and `cli` project templates through one validated registration path with immutable metadata.
+- Generate all three built-in file templates through a shared execution layer that keeps registry metadata, project/package context, file mappings, and VS Code entry-point resolution distinct.
 - List registered template names and descriptions without invoking project generation.
 - Generate a minimal library layout with a normalized import-package directory, `tests/`, empty package initializers, shared README/Git-ignore/pyproject content, and an empty requirements file.
 - Generate a minimal command-line package with `__main__.py`, an argparse interface, empty requirements, and executable module, help, version, and editor entry points.
@@ -31,7 +32,7 @@ ForgePy favors understandable automation, explicit architectural boundaries, com
 - Resolve omitted create location and template values from `default_location` and `default_template`, after explicit CLI arguments and before the existing prompt/`basic` fallback.
 - Test configuration behavior, create-input precedence, metadata and registration, all built-in entries, list output, generated structures and execution, and template-aware VS Code output with `unittest`.
 
-`ConfigCommand` manages all persisted values. `CreateCommand` consumes only `default_location` and `default_template`; `author` and `license` remain unused. `ProjectGenerator` does not depend on `ConfigStore`. Its shared lifecycle and the established `basic` and `library` outputs remain unchanged; `cli` adds only its template-specific layout, source content, and editor entry point.
+`ConfigCommand` manages all persisted values. `CreateCommand` consumes only `default_location` and `default_template`; `author` and `license` remain unused. `ProjectGenerator` does not depend on `ConfigStore`. Its shared lifecycle is unchanged. `FileTemplate` now performs the repeated template-local folder/file execution while each built-in retains its established layout, content, and editor requirement.
 
 ## Repository structure
 
@@ -42,9 +43,9 @@ ForgePy favors understandable automation, explicit architectural boundaries, com
 | `config/` | Version metadata, generated folder defaults, and user-level JSON configuration. |
 | `core/` | Project lifecycle and environment, Git, requirements, and VS Code services. |
 | `models/` | `ProjectConfig` data model. |
-| `templates/` | Basic, library, and CLI templates, immutable metadata, registry, file mappings, rendered content, and VS Code JSON. |
+| `templates/` | Basic, library, and CLI definitions; shared context/execution contracts; immutable metadata; template-owned file mappings; template-specific VS Code entry-point rules; registry; rendered content; and VS Code JSON. |
 | `utils/` | Present but currently contains no implemented utility behavior. |
-| `tests/` | Standard-library tests for configuration, create resolution, metadata/registry behavior, list output, built-in structures, and VS Code compatibility. |
+| `tests/` | Standard-library tests for configuration, create resolution, metadata/registry behavior, list output, template architecture and output snapshots, built-in structures, and VS Code compatibility. |
 | `main.py` | Executable application entry point. |
 
 The root `README.md`, `requirements.txt`, and `config.py` are currently empty.
@@ -52,17 +53,17 @@ The root `README.md`, `requirements.txt`, and `config.py` are currently empty.
 ## Technical constraints
 
 - Full generation is Windows-oriented: environment tools are addressed under `.venv/Scripts` with `.exe` filenames.
-- ForgePy itself has no declared third-party runtime dependencies. Automated coverage includes configuration, create-input resolution, metadata/registry behavior, list output, all built-in structures, generated CLI execution, and isolated template-aware VS Code generation through `ProjectGenerator`. The generated `basic` project requires `PySide6`, `pandas`, and `openpyxl`; `library` and `cli` have empty requirements files. The full lifecycle still upgrades packaging tools and may require network access.
+- ForgePy itself has no declared third-party runtime dependencies. Automated coverage includes configuration, create-input resolution, metadata/registry behavior, list output, the shared template contract, exact normalized output snapshots, all built-in structures, generated CLI execution, and isolated template-aware VS Code generation through `ProjectGenerator`. The generated `basic` project requires `PySide6`, `pandas`, and `openpyxl`; `library` and `cli` have empty requirements files. The full lifecycle still upgrades packaging tools and may require network access.
 - Template lookup uses direct dictionary indexing; an unknown template is not converted into a friendly CLI error.
 - Template metadata versioning has no release policy yet. The `basic` metadata records `0.6.0`, while `library` and `cli` start at `0.1.0`; these are independent from the ForgePy application and generated-project versions.
 - Subprocess failures generally propagate because commands use `check=True`.
 - Generation uses `exist_ok=True`, so an existing target can be written into rather than rejected.
 - The generated `pyproject.toml` requires Python `>=3.12`, but the ForgePy repository itself does not declare a supported Python range.
-- `config.default_structure.DEFAULT_FILES` is defined but unused; `TemplateFiles.basic()`, `LibraryFiles.build()`, and `CliFiles.build()` determine their respective generated files.
+- `config.default_structure.DEFAULT_FILES` is defined but unused. `BasicFiles`, `LibraryFiles`, and `CliFiles` own their complete mappings and call `TemplateManager` directly for rendered content; `TemplateFiles.basic()` remains a compatibility facade.
 
 ## Near-term priorities
 
-- Finish and verify the Sprint 8.3 `cli` template without changing established generation behavior or the shared lifecycle.
+- Finish and verify the Sprint 8.4 template-architecture refactor without changing established output or the shared project lifecycle.
 - Keep further templates beyond `basic`, `library`, and `cli` subject to separate approval and compatibility review.
 - Keep persisted `author` and `license` values, and the configuration store itself, out of core generation and templates until a separate requirement explicitly defines that integration.
 - Continue expanding automated coverage across supported commands, lifecycle stages, and failure handling.
@@ -80,11 +81,11 @@ Use this section as the handoff point for a new developer or AI session.
 | --- | --- |
 | Stable baseline | `v0.6.0` (`Sprint 6 Stable`) |
 | Current branch policy | Repository policy treats `master` as protected; use a feature branch for implementation |
-| Active development area | Sprint 8.3 minimal `cli` template |
+| Active development area | Sprint 8.4 modular template architecture |
 | Implemented CLI | `create`, `list`, `version`, `config show/set/reset`, plus no-command interactive create |
 | Implemented templates | `basic`, `library`, and `cli`, all with descriptive metadata |
 | Version source | `config/version.py`, aligned with the `v0.6.0` release tag |
-| Verification state | `unittest` covers configuration, create precedence, metadata/registry behavior, list output, all structures, CLI execution, and isolated template-aware VS Code generation; the real external lifecycle remains a manual check |
+| Verification state | `unittest` covers configuration, create precedence, metadata/registry behavior, list output, template architecture and output snapshots, all structures, CLI execution, and isolated template-aware VS Code generation; the real external lifecycle remains a manual check |
 
 To resume work:
 
