@@ -2,7 +2,7 @@
 
 ## Overview
 
-ForgePy is a layered command-line application. The CLI parses user input and selects a command, the create command delegates to `ProjectGenerator`, and the generator coordinates template rendering and setup services. The template registry keeps descriptive metadata alongside executable templates so listing does not invoke generation. Built-in templates separate per-generation context, template-owned file mappings, and explicit VS Code entry-point rules; their common execution layer delegates folder and file writes to the existing builders. An independent component package provides metadata, a declarative installation manifest, a validated existing-project context, a minimal installation hook, and an empty in-memory registry; it is not connected to the application or generation flow.
+ForgePy is a layered command-line application. The CLI parses user input and selects a command, the create command delegates to `ProjectGenerator`, and the generator coordinates template rendering and setup services. The template registry keeps descriptive metadata alongside executable templates so listing does not invoke generation. Built-in templates separate per-generation context, template-owned file mappings, and explicit VS Code entry-point rules; their common execution layer delegates folder and file writes to the existing builders. An independent component package provides metadata, a declarative installation manifest, a validated existing-project context, a minimal installation hook, one isolated `pytest` built-in, and an in-memory registry; it is not connected to the application or generation flow.
 
 ## Directory structure
 
@@ -11,12 +11,13 @@ ForgePy/
 |-- builders/                 Reusable file-system and Python-tool builders
 |-- cli/                      Argument parsing, dispatch, and command objects
 |   `-- commands/             Implementations and the shared command catalog
-|-- components/               Independent component contract and empty registry
+|-- components/               Independent component contracts and registry
 |   |-- base_component.py     Abstract identity/metadata/manifest/install contract
 |   |-- component_context.py  Validated existing-project context
 |   |-- component_manifest.py Immutable declarative installation properties
 |   |-- component_metadata.py Immutable descriptive component metadata
-|   `-- component_registry.py In-memory explicit component registration
+|   |-- component_registry.py In-memory built-in and explicit registration
+|   `-- pytest_component.py    Built-in isolated pytest configuration
 |-- config/                   Application and user configuration
 |   |-- default_structure.py  Generated project layout defaults
 |   |-- user_config.py        Persistent user configuration store
@@ -66,7 +67,8 @@ ForgePy/
 | `components/component_context.py` | Validates the existing project directory supplied explicitly to installation. |
 | `components/component_manifest.py` | Defines immutable owned-file, dependency, and conflict declarations without resolution behavior. |
 | `components/component_metadata.py` | Defines immutable descriptive metadata for component definitions. |
-| `components/component_registry.py` | Validates explicit in-memory registrations and provides lookup and immutable ordered listing. |
+| `components/component_registry.py` | Registers the built-in catalog deterministically, validates explicit in-memory registrations, and provides lookup and immutable ordered listing. |
+| `components/pytest_component.py` | Defines the built-in component that exclusively creates its declared `pytest.ini` in an existing project. |
 | `templates/basic/basic_template.py` | Declares the basic metadata, folders, file mapping, and `app.py` VS Code default through shared execution hooks. |
 | `templates/basic/basic_files.py` | Owns the complete basic-template mapping and renders its content through `TemplateManager`. |
 | `templates/cli/cli_template.py` | Declares the normalized CLI context, folders, file mapping, and context-derived VS Code entry point. |
@@ -84,7 +86,8 @@ ForgePy/
 | `config/default_structure.py` | Supplies the basic generated-project directory list. |
 | `config/user_config.py` | Loads, validates, updates, resets, and atomically saves user-level JSON configuration. |
 | `config/version.py` | Supplies canonical application metadata. |
-| `tests/test_component_registry.py` | Verifies component metadata, empty registry state, registration, lookup, listing order, and rejection paths without side effects. |
+| `tests/test_component_registry.py` | Verifies component metadata, built-in and explicit registration, lookup, listing order, and rejection paths without installation side effects. |
+| `tests/test_pytest_component.py` | Verifies pytest metadata, manifest, deterministic registration, isolated installation, and existing-target behavior. |
 | `tests/test_config_command.py` | Verifies configuration parsing, dispatch, output, persistence, reset, and error handling with an isolated home. |
 | `tests/test_create_command.py` | Verifies create-input precedence, prompting, configuration errors, and generator delegation without generating a project. |
 | `tests/test_cli_template.py` | Verifies CLI metadata, registration, exact output, normalization, module execution, help, version, and editor-entry execution. |
@@ -156,6 +159,8 @@ flowchart TD
 
     subgraph ComponentFoundation[Independent component foundation]
         ComponentRegistry[ComponentRegistry] --> BaseComponent[BaseComponent]
+        ComponentRegistry --> PytestComponent[PytestComponent]
+        PytestComponent --> BaseComponent
         ComponentRegistry --> ComponentMetadata[ComponentMetadata]
         ComponentRegistry --> ComponentManifest[ComponentManifest]
         BaseComponent --> ComponentMetadata
@@ -211,7 +216,8 @@ CLI and orchestration layers depend on lower-level services. Template content mo
 - `ComponentManifest` is a frozen, slotted dataclass containing owned or managed project-relative `pathlib.Path` entries, dependency names, and conflict names. Construction snapshots collections as tuples; rejects invalid or empty entries, duplicates, absolute paths, and lexical parent traversal; and performs no filesystem resolution.
 - `ComponentContext` contains only a `pathlib.Path` for an existing project directory and rejects missing paths, files, and non-`Path` values before installation.
 - `BaseComponent` exposes abstract `name`, `metadata`, `manifest`, and `install(context)` members. The hook defines no orchestration, rollback, discovery, or dependency behavior.
-- `ComponentRegistry` starts empty, stores component instances directly, requires matching component and metadata names, rejects self-dependency, self-conflict, and duplicate registrations before mutation, preserves registration order, and returns an immutable tuple from `list_components()`.
+- `ComponentRegistry` deterministically registers `PytestComponent` first, stores component instances directly, requires matching component and metadata names, rejects self-dependency, self-conflict, and duplicate registrations before mutation, preserves registration order, and returns an immutable tuple from `list_components()`.
+- `PytestComponent` declares only `pytest.ini`, has no dependencies or conflicts, and installs by exclusively creating deterministic pytest configuration under `ComponentContext.project_path`. An existing target raises `FileExistsError` without modification.
 - `TemplateMetadata` is a frozen, slotted dataclass containing `name`, `description`, template `version`, `author`, and immutable `tags`. Construction validates scalar types, rejects empty or whitespace-only names, and snapshots tag iterables as tuples.
 - `BaseTemplate` remains the stable public `name`, `create()`, metadata, and `vscode_entry_point` contract. Its compatibility defaults for legacy subclasses are unchanged.
 - `FileTemplate` is an opt-in `BaseTemplate` implementation used by the three built-ins. It derives `name` from the class's immutable metadata, builds a `TemplateContext`, creates declared folders, writes the ordered template-owned mapping through `FileBuilder`, and assigns its resolved VS Code entry point only after all writes succeed. `_DEFAULT_VSCODE_ENTRY_POINT` supplies static behavior, while `_vscode_entry_point_for(context)` resolves context-derived paths.
@@ -224,7 +230,7 @@ CLI and orchestration layers depend on lower-level services. Template content mo
 
 ## Component registry foundation
 
-ForgePy currently registers no built-in components. `ComponentRegistry` is an installation- and resolution-agnostic in-memory catalog only: `register(component)` validates its contract, component/metadata identity, and absence of self-references, then stores one `BaseComponent`; `get(name)` returns the registered instance or preserves the standard `KeyError`; and `list_components()` returns an immutable tuple in registration order. Registration does not look up dependencies, evaluate relationships between components, or select installation order.
+ForgePy registers only `PytestComponent` by default. `ComponentRegistry` remains an installation- and resolution-agnostic in-memory catalog: `register(component)` validates its contract, component/metadata identity, and absence of self-references, then stores one `BaseComponent`; `get(name)` returns the registered instance or preserves the standard `KeyError`; and `list_components()` returns an immutable tuple in registration order. Registration does not install components, look up dependencies, evaluate relationships between components, or select installation order.
 
 `ComponentMetadata`, `ComponentManifest`, `ComponentContext`, and `BaseComponent` are independent from `TemplateMetadata`, `TemplateContext`, `BaseTemplate`, and `TemplateRegistry`; neither registry imports or registers objects from the other system. Component installation is an explicit hook supplied with an existing project directory. The foundation performs no discovery, persistence, dependency resolution, installation ordering, rollback, uninstall, installation orchestration, CLI presentation, template association, or generation integration.
 
@@ -416,7 +422,7 @@ The current implementation uses Windows executable paths such as `.venv/Scripts/
 - Most subprocess failures propagate; only the initial Git commit has local error handling.
 - The generator writes into an existing project root because it uses `exist_ok=True`.
 - `BaseBuilder` has no behavioral contract, and core builder-style services do not share its inheritance hierarchy.
-- `ComponentRegistry` is intentionally empty, in-memory, and installation-agnostic. Component discovery, persistence, dependencies, installation orchestration, CLI exposure, template association, and generation integration are undefined.
+- `ComponentRegistry` is in-memory and installation-agnostic, with only `pytest` registered by default. Component discovery, persistence, dependency resolution, installation orchestration, CLI exposure, template association, and generation integration are undefined.
 - `config.default_structure.DEFAULT_FILES` is currently unused. `BasicFiles`, `LibraryFiles`, and `CliFiles` own their mappings; `TemplateFiles.basic()` is retained only as a compatibility facade.
 - `CliTemplate` retains per-instance resolved entry-point state. `vscode_entry_point` reports `None` before the generated `cli.py` has been written and is recomputed for each successful `create()` call.
 - The compatibility `TemplateFiles.basic()` facade creates a deliberate template-engine-to-Basic dependency until an explicit compatibility change removes the older API.
@@ -445,7 +451,7 @@ Apply the design principles and Definition of Done in [`ENGINEERING_PRINCIPLES.m
 ### Components
 
 - Register only `BaseComponent` implementations with valid `ComponentMetadata` and matching non-empty names.
-- Keep a new `ComponentRegistry` empty until a built-in component is explicitly approved.
+- Keep the default `ComponentRegistry` catalog limited to the explicitly approved `pytest` component until another built-in is separately approved.
 - Treat installation, persistence, discovery, dependency handling, CLI exposure, template association, and generation integration as separate future requirements.
 
 ### User Configuration

@@ -1,1 +1,1 @@
-"""Independent component definitions, manifests, and installation contract."""
+"""Independent component contracts, registry, and built-in definitions."""
