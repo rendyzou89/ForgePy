@@ -21,7 +21,7 @@ The project favors:
 - `cli/` owns parsing, command selection, and command-level validation.
 - `core/ProjectGenerator` owns project-generation sequencing.
 - Builders and core tooling services own focused side effects.
-- `components/` owns the independent component-definition contract and empty in-memory registry.
+- `components/` owns the independent component-definition and installation contracts, validated project context, and empty in-memory registry.
 - `templates/` owns registration metadata, per-generation context, rendered file definitions, and template-specific VS Code entry-point decisions.
 - `models/` carries project data; `config/` owns application metadata, generated-layout defaults, and isolated user-configuration persistence.
 
@@ -31,13 +31,13 @@ Dependencies should follow those boundaries. Templates and builders must not dep
 
 Template selection belongs to `TemplateRegistry`; `TemplateMetadata` describes registrations; `TemplateContext` carries project/package data; template-local mappings define content; and each built-in resolves an explicit VS Code entry point from a static default or generation context. Common `FileTemplate` execution delegates disk writes to focused builders. `ProjectGenerator` may forward explicit requirements while remaining orchestration-only. CLI prompting must not leak into builders or templates.
 
-`ComponentRegistry` catalogs component definitions only. Registration and lookup do not install packages, select templates, modify generated files, or trigger other side effects.
+`ComponentRegistry` catalogs component definitions only. Registration and lookup do not invoke component installation, install packages, select templates, modify generated files, or trigger other side effects. A component installation receives only a validated context naming an existing project directory.
 
 ### Prefer small contracts
 
 Extend commands through the shared `Command` metadata and `execute()` contract, override `configure_parser()` when arguments are required, and add built-in commands to the explicit catalog in `cli.commands`. Preserve the public `BaseTemplate` contract; built-in file templates use the focused `FileTemplate` hooks for context, folders, files, and VS Code entry-point resolution. Keep descriptive metadata in the template registry rather than builders or rendered content. Keep inputs explicit, use type hints, and pass `pathlib.Path` objects at file-system boundaries.
 
-Extend the component catalog through `BaseComponent`, `ComponentMetadata`, and explicit `ComponentRegistry.register()` calls; keep the default catalog empty.
+Extend the component catalog through `BaseComponent`, `ComponentMetadata`, `ComponentContext`, and explicit `ComponentRegistry.register()` calls; keep the default catalog empty and installation outside the registry.
 
 ### Preserve compatibility intentionally
 

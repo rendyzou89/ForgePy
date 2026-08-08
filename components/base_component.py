@@ -1,12 +1,13 @@
-"""Minimal contract for component definitions."""
+"""Minimal contract for component definitions and installation."""
 
 from abc import ABC, abstractmethod
 
+from components.component_context import ComponentContext
 from components.component_metadata import ComponentMetadata
 
 
 class BaseComponent(ABC):
-    """Expose component identity and metadata without execution behavior."""
+    """Expose component identity, metadata, and installation behavior."""
 
     @property
     @abstractmethod
@@ -17,3 +18,7 @@ class BaseComponent(ABC):
     @abstractmethod
     def metadata(self) -> ComponentMetadata:
         """Return descriptive metadata for this component."""
+
+    @abstractmethod
+    def install(self, context: ComponentContext) -> None:
+        """Install the component into the context's existing project."""

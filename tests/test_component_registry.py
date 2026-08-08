@@ -1,7 +1,10 @@
 import unittest
 from dataclasses import FrozenInstanceError
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from components.base_component import BaseComponent
+from components.component_context import ComponentContext
 from components.component_metadata import ComponentMetadata
 from components.component_registry import ComponentRegistry
 
@@ -25,6 +28,7 @@ class ExampleComponent(BaseComponent):
     ) -> None:
         self._metadata = metadata
         self._name = metadata.name if name is None else name
+        self.installed_contexts: list[ComponentContext] = []
 
     @property
     def name(self) -> str:
@@ -33,6 +37,9 @@ class ExampleComponent(BaseComponent):
     @property
     def metadata(self) -> ComponentMetadata:
         return self._metadata
+
+    def install(self, context: ComponentContext) -> None:
+        self.installed_contexts.append(context)
 
 
 class InvalidMetadataComponent(BaseComponent):
@@ -44,6 +51,96 @@ class InvalidMetadataComponent(BaseComponent):
     @property
     def metadata(self) -> ComponentMetadata:
         return object()  # type: ignore[return-value]
+
+    def install(self, context: ComponentContext) -> None:
+        del context
+
+
+class ComponentContextTests(unittest.TestCase):
+
+    def test_context_accepts_an_existing_project_directory(self) -> None:
+        with TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory)
+
+            context = ComponentContext(project_path=project_path)
+
+            self.assertEqual(context.project_path, project_path)
+
+    def test_context_is_immutable(self) -> None:
+        with TemporaryDirectory() as temporary_directory:
+            context = ComponentContext(Path(temporary_directory))
+
+            with self.assertRaises(FrozenInstanceError):
+                context.project_path = Path("changed")  # type: ignore[misc]
+
+    def test_context_rejects_a_non_path_project_path(self) -> None:
+        with self.assertRaisesRegex(TypeError, "must be a Path"):
+            ComponentContext("project")  # type: ignore[arg-type]
+
+    def test_context_rejects_a_missing_project_path(self) -> None:
+        with TemporaryDirectory() as temporary_directory:
+            missing_path = Path(temporary_directory) / "missing"
+
+            with self.assertRaisesRegex(ValueError, "must exist"):
+                ComponentContext(missing_path)
+
+    def test_context_rejects_a_file_project_path(self) -> None:
+        with TemporaryDirectory() as temporary_directory:
+            file_path = Path(temporary_directory) / "not-a-project"
+            file_path.write_text("", encoding="utf-8")
+
+            with self.assertRaisesRegex(ValueError, "must be a directory"):
+                ComponentContext(file_path)
+
+
+class ComponentContractTests(unittest.TestCase):
+
+    def test_install_receives_the_validated_context(self) -> None:
+        with TemporaryDirectory() as temporary_directory:
+            context = ComponentContext(Path(temporary_directory))
+            component = ExampleComponent(component_metadata())
+
+            component.install(context)
+
+            self.assertEqual(component.installed_contexts, [context])
+
+    def test_install_side_effects_can_be_confined_to_the_context(self) -> None:
+        class FileComponent(ExampleComponent):
+
+            def install(self, context: ComponentContext) -> None:
+                (context.project_path / "component.txt").write_text(
+                    "installed",
+                    encoding="utf-8",
+                )
+
+        with TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory) / "project"
+            outside_path = Path(temporary_directory) / "outside"
+            project_path.mkdir()
+            outside_path.mkdir()
+            component = FileComponent(component_metadata())
+
+            component.install(ComponentContext(project_path))
+
+            self.assertEqual(
+                (project_path / "component.txt").read_text(encoding="utf-8"),
+                "installed",
+            )
+            self.assertEqual(tuple(outside_path.iterdir()), ())
+
+    def test_component_without_install_hook_remains_abstract(self) -> None:
+        class IncompleteComponent(BaseComponent):
+
+            @property
+            def name(self) -> str:
+                return "incomplete"
+
+            @property
+            def metadata(self) -> ComponentMetadata:
+                return component_metadata("incomplete")
+
+        with self.assertRaises(TypeError):
+            IncompleteComponent()  # type: ignore[abstract]
 
 
 class ComponentMetadataTests(unittest.TestCase):
@@ -136,6 +233,7 @@ class ComponentRegistryTests(unittest.TestCase):
         registry.register(component)
 
         self.assertEqual(registry.list_components(), (component,))
+        self.assertEqual(component.installed_contexts, [])
 
     def test_get_returns_the_registered_component(self) -> None:
         registry = ComponentRegistry()
@@ -143,6 +241,7 @@ class ComponentRegistryTests(unittest.TestCase):
         registry.register(component)
 
         self.assertIs(registry.get("example"), component)
+        self.assertEqual(component.installed_contexts, [])
 
     def test_list_components_preserves_registration_order(self) -> None:
         registry = ComponentRegistry()
