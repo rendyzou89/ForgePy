@@ -9,18 +9,21 @@ from components.component_installer import (
     ComponentInstaller,
 )
 from components.component_registry import ComponentRegistry
-from components.component_state import ForgePyComponentStateError
+from components.component_state import (
+    ComponentStateStore,
+    ForgePyComponentStateError,
+)
 from components.component_validation import ComponentValidationError
 
 
 class ComponentCommand(Command):
-    """List components or install one into an existing project."""
+    """List available or installed components, or install one."""
 
     name = "component"
-    summary = "List or add ForgePy components."
+    summary = "List, inspect, or add ForgePy components."
     description = (
-        "List registered ForgePy components or add one to an existing "
-        "project."
+        "List registered ForgePy components, inspect project-local installed "
+        "state, or add one to an existing project."
     )
 
     def __init__(self, registry: ComponentRegistry | None = None) -> None:
@@ -41,6 +44,22 @@ class ComponentCommand(Command):
             description=(
                 "List registered built-in component names and descriptions."
             ),
+        )
+
+        installed_parser = actions.add_parser(
+            "installed",
+            help="List components recorded as installed in a project.",
+            description=(
+                "List component names recorded in an explicitly supplied "
+                "existing project directory."
+            ),
+        )
+        installed_parser.add_argument(
+            "--project",
+            required=True,
+            type=Path,
+            metavar="PATH",
+            help="Path to an existing project directory.",
         )
 
         add_parser = actions.add_parser(
@@ -69,6 +88,8 @@ class ComponentCommand(Command):
 
         if action == "list":
             self._list()
+        elif action == "installed":
+            self._installed(args.project)
         elif action == "add":
             self._add(args.component_name, args.project)
         else:
@@ -82,6 +103,25 @@ class ComponentCommand(Command):
         for component in self._get_registry().list_components():
             metadata = component.metadata
             print(f"- {metadata.name}: {metadata.description}")
+
+    @staticmethod
+    def _installed(project_path: Path) -> None:
+        try:
+            installed_components = ComponentStateStore(project_path).load()
+        except ForgePyComponentStateError as error:
+            print(f"[ERROR] {error}")
+            return
+        except (TypeError, ValueError) as error:
+            print(f"[ERROR] Invalid project path '{project_path}': {error}")
+            return
+
+        if not installed_components:
+            print("No installed components.")
+            return
+
+        print("Installed components:")
+        for component_name in sorted(installed_components):
+            print(f"- {component_name}")
 
     def _add(self, name: str, project_path: Path) -> None:
         try:
