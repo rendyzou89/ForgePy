@@ -1,7 +1,9 @@
 """Project destination validation and filesystem-safety tests."""
 
+import ast
 import os
 import tempfile
+import tomllib
 import unittest
 from contextlib import ExitStack, redirect_stdout
 from io import StringIO
@@ -45,6 +47,86 @@ class ProjectNameContractTests(unittest.TestCase):
                             location=location,
                         )
 
+    def test_rejects_names_unsafe_for_windows_or_generated_content(self) -> None:
+        invalid_characters = '<>:"/\\|?*'
+        cases = (
+            "   ",
+            "trailing ",
+            "trailing.",
+            "line\nfeed",
+            "carriage\rreturn",
+            "tab\tname",
+            "delete\x7fname",
+            "surrogate\ud800name",
+            *(f"name{character}part" for character in invalid_characters),
+        )
+
+        for project_name in cases:
+            with self.subTest(project_name=project_name):
+                with self.assertRaises(ValueError):
+                    ProjectConfig(name=project_name, location=Path("projects"))
+
+    def test_rejects_leading_ascii_spaces(self) -> None:
+        for project_name in (" Project", "  Project"):
+            with self.subTest(project_name=project_name):
+                with self.assertRaises(ValueError):
+                    ProjectConfig(name=project_name, location=Path("projects"))
+
+    def test_rejects_windows_reserved_device_names(self) -> None:
+        cases = (
+            "CON",
+            "con",
+            "NUL",
+            "COM1",
+            "COM9",
+            "LPT1",
+            "LPT9",
+            "CON.txt",
+            "aux.json",
+            "COM¹",
+            "COM²",
+            "COM³",
+            "LPT¹",
+            "LPT²",
+            "LPT³",
+            "COM¹.txt",
+            "COM².log",
+            "LPT³.data",
+        )
+
+        for project_name in cases:
+            with self.subTest(project_name=project_name):
+                with self.assertRaises(ValueError):
+                    ProjectConfig(name=project_name, location=Path("projects"))
+
+    def test_accepts_windows_reserved_name_near_misses(self) -> None:
+        for project_name in ("CONSOLE", "COM10", "LPT10", "AUXILIARY"):
+            with self.subTest(project_name=project_name):
+                config = ProjectConfig(
+                    name=project_name,
+                    location=Path("projects"),
+                )
+
+                self.assertEqual(config.name, project_name)
+
+    def test_accepts_human_readable_names_without_rewriting(self) -> None:
+        cases = (
+            "my-project",
+            "my_project",
+            "Project 123",
+            "Café App",
+        )
+
+        for project_name in cases:
+            with self.subTest(project_name=project_name):
+                config = ProjectConfig(
+                    name=project_name,
+                    location=Path("projects"),
+                )
+
+                self.assertEqual(config.name, project_name)
+                self.assertEqual(config.root, Path("projects") / project_name)
+
 
 class ProjectDestinationSafetyTests(unittest.TestCase):
     """Verify generation rejects unsafe destinations before writes."""
@@ -65,6 +147,35 @@ class ProjectDestinationSafetyTests(unittest.TestCase):
 
             self.assertEqual(tuple(location.iterdir()), ())
             registry.assert_not_called()
+
+    def test_content_unsafe_names_are_rejected_before_generation(self) -> None:
+        cases = (
+            "   ",
+            " Project",
+            'quoted"name',
+            "line\nfeed",
+            "trailing.",
+            "CON.txt",
+            "COM¹.txt",
+        )
+
+        for project_name in cases:
+            with self.subTest(project_name=project_name):
+                with tempfile.TemporaryDirectory() as temporary_directory:
+                    location = Path(temporary_directory)
+
+                    with patch(
+                        "core.project_generator.TemplateRegistry"
+                    ) as registry:
+                        with self.assertRaises(ValueError):
+                            ProjectGenerator().create(
+                                project_name=project_name,
+                                location=str(location),
+                                template_name="basic",
+                            )
+
+                    self.assertEqual(tuple(location.iterdir()), ())
+                    registry.assert_not_called()
 
     def test_existing_directory_and_contents_are_preserved(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -198,6 +309,43 @@ class ProjectDestinationSafetyTests(unittest.TestCase):
                     self.assertTrue((destination / expected_file).is_file())
                     for stage_call in stage_calls:
                         stage_call.assert_called_once()
+
+    def test_representative_names_generate_valid_python_and_toml(self) -> None:
+        cases = (
+            ("basic", "my-project"),
+            ("library", "Project 123"),
+            ("cli", "Café App"),
+        )
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            location = Path(temporary_directory)
+
+            for template_name, project_name in cases:
+                with self.subTest(
+                    template=template_name,
+                    project_name=project_name,
+                ):
+                    destination = location / project_name
+                    with ExitStack() as stack:
+                        self._patch_generation_stages(stack)
+                        stack.enter_context(redirect_stdout(StringIO()))
+                        ProjectGenerator().create(
+                            project_name=project_name,
+                            location=str(location),
+                            template_name=template_name,
+                        )
+
+                    for python_file in destination.rglob("*.py"):
+                        ast.parse(
+                            python_file.read_text(encoding="utf-8"),
+                            filename=str(python_file),
+                        )
+
+                    pyproject = destination / "pyproject.toml"
+                    parsed = tomllib.loads(
+                        pyproject.read_text(encoding="utf-8")
+                    )
+                    self.assertEqual(parsed["project"]["name"], project_name)
 
     @staticmethod
     def _patch_generation_stages(stack: ExitStack) -> tuple[Mock, ...]:

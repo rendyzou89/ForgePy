@@ -62,7 +62,7 @@ ForgePy/
 | `cli/commands/component_command.py` | Lists registered components, presents project-local installed state, delegates add operations to `ComponentInstaller`, and adapts operational errors for the CLI. |
 | `cli/dispatcher.py` | Builds command lookup from the shared catalog; defaults to `create`. |
 | `cli/commands/` | Validates command-level input and invokes application services. |
-| `models/project_config.py` | Validates the one-segment project name, stores the selected location, and derives the root path. |
+| `models/project_config.py` | Validates the generated-content-safe Windows project name, stores the selected location, and derives the root path. |
 | `core/project_generator.py` | Orchestrates the complete create workflow. |
 | `core/environment_builder.py` | Creates `.venv` with the running Python interpreter. |
 | `core/requirements_installer.py` | Installs the generated requirements with the new environment's `pip.exe`. |
@@ -235,7 +235,7 @@ CLI and orchestration layers depend on lower-level services. Template content mo
 - `cli.commands.create_commands()` is the single built-in command catalog used by both `Parser` and `Dispatcher`.
 - `Dispatcher` derives its CLI-name mapping from that catalog.
 - `CreateCommand` resolves explicit, persisted, and interactive/default inputs before invoking `ProjectGenerator`; `ListCommand` reads descriptive metadata from `TemplateRegistry`, `VersionCommand` reads canonical application-version metadata, `ConfigCommand` delegates user-setting operations to `ConfigStore`, and `ComponentCommand` reads installed state or delegates add operations to `ComponentInstaller` while adapting operational errors for the CLI.
-- `ProjectConfig` is a slotted dataclass used by `ProjectGenerator` to derive the target root. Its project name must be one non-empty filesystem segment: dot names, absolute and drive-qualified names, separators, and lexical multi-component names are rejected explicitly.
+- `ProjectConfig` is a slotted dataclass used by `ProjectGenerator` to derive the target root. Its project name must be a non-empty, non-whitespace, single destination segment that is safe for current generated Python/TOML strings and the supported Windows filesystem contract. Control characters, Windows-invalid filename characters, leading or trailing ASCII spaces, trailing dots, and Windows reserved device stems (including extension forms and the superscript-digit `COM¹`-`COM³`/`LPT¹`-`LPT³` variants) are rejected explicitly. The accepted original name is not rewritten; package-oriented templates continue to normalize only their separate Python package name.
 - `ComponentMetadata` is a frozen, slotted dataclass containing `name`, `description`, component `version`, `author`, and immutable `tags`. Construction validates scalar types, rejects empty or whitespace-only names, and snapshots tag iterables as tuples.
 - `ComponentManifest` is a frozen, slotted dataclass containing owned or managed project-relative `pathlib.Path` entries, dependency names, and conflict names. Construction snapshots collections as tuples; rejects invalid or empty entries, duplicates, absolute paths, and lexical parent traversal; and performs no filesystem resolution.
 - `ComponentContext` contains only a `pathlib.Path` for an existing project directory and rejects missing paths, files, and non-`Path` values before installation.
