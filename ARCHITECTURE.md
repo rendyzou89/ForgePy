@@ -17,6 +17,7 @@ ForgePy/
 |   |-- component_manifest.py Immutable declarative installation properties
 |   |-- component_metadata.py Immutable descriptive component metadata
 |   |-- component_registry.py In-memory built-in and explicit registration
+|   |-- component_validation.py Stateless direct relationship validation
 |   `-- pytest_component.py    Built-in isolated pytest configuration
 |-- config/                   Application and user configuration
 |   |-- default_structure.py  Generated project layout defaults
@@ -69,6 +70,7 @@ ForgePy/
 | `components/component_manifest.py` | Defines immutable owned-file, dependency, and conflict declarations without resolution behavior. |
 | `components/component_metadata.py` | Defines immutable descriptive metadata for component definitions. |
 | `components/component_registry.py` | Registers the built-in catalog deterministically, validates explicit in-memory registrations, and provides lookup and immutable ordered listing. |
+| `components/component_validation.py` | Validates direct manifest dependencies and conflicts against caller-supplied installed names without side effects. |
 | `components/pytest_component.py` | Defines the built-in component that exclusively creates its declared `pytest.ini` in an existing project. |
 | `templates/basic/basic_template.py` | Declares the basic metadata, folders, file mapping, and `app.py` VS Code default through shared execution hooks. |
 | `templates/basic/basic_files.py` | Owns the complete basic-template mapping and renders its content through `TemplateManager`. |
@@ -88,6 +90,7 @@ ForgePy/
 | `config/user_config.py` | Loads, validates, updates, resets, and atomically saves user-level JSON configuration. |
 | `config/version.py` | Supplies canonical application metadata. |
 | `tests/test_component_registry.py` | Verifies component metadata, built-in and explicit registration, lookup, listing order, and rejection paths without installation side effects. |
+| `tests/test_component_validation.py` | Verifies direct dependency/conflict checks, aggregated failures, registry isolation, and validation without writes or installation. |
 | `tests/test_pytest_component.py` | Verifies pytest metadata, manifest, deterministic registration, isolated installation, and existing-target behavior. |
 | `tests/test_config_command.py` | Verifies configuration parsing, dispatch, output, persistence, reset, and error handling with an isolated home. |
 | `tests/test_create_command.py` | Verifies create-input precedence, prompting, configuration errors, and generator delegation without generating a project. |
@@ -222,6 +225,7 @@ CLI and orchestration layers depend on lower-level services. Template content mo
 - `ComponentContext` contains only a `pathlib.Path` for an existing project directory and rejects missing paths, files, and non-`Path` values before installation.
 - `BaseComponent` exposes abstract `name`, `metadata`, `manifest`, and `install(context)` members. The hook defines no orchestration, rollback, discovery, or dependency behavior.
 - `ComponentRegistry` deterministically registers `PytestComponent` first, stores component instances directly, requires matching component and metadata names, rejects self-dependency, self-conflict, and duplicate registrations before mutation, preserves registration order, and returns an immutable tuple from `list_components()`.
+- `validate_component(component, installed_components)` checks only the selected component's direct manifest relationships against an explicit iterable of installed names. `ComponentValidationError` reports ordered missing dependencies and active conflicts together without installing or resolving anything.
 - `PytestComponent` declares only `pytest.ini`, has no dependencies or conflicts, and installs by exclusively creating deterministic pytest configuration under `ComponentContext.project_path`. An existing target raises `FileExistsError` without modification.
 - `TemplateMetadata` is a frozen, slotted dataclass containing `name`, `description`, template `version`, `author`, and immutable `tags`. Construction validates scalar types, rejects empty or whitespace-only names, and snapshots tag iterables as tuples.
 - `BaseTemplate` remains the stable public `name`, `create()`, metadata, and `vscode_entry_point` contract. Its compatibility defaults for legacy subclasses are unchanged.
@@ -238,6 +242,8 @@ CLI and orchestration layers depend on lower-level services. Template content mo
 ForgePy registers only `PytestComponent` by default. `ComponentRegistry` remains an installation- and resolution-agnostic in-memory catalog: `register(component)` validates its contract, component/metadata identity, and absence of self-references, then stores one `BaseComponent`; `get(name)` returns the registered instance or preserves the standard `KeyError`; and `list_components()` returns an immutable tuple in registration order. Registration does not install components, look up dependencies, evaluate relationships between components, or select installation order.
 
 `ComponentMetadata`, `ComponentManifest`, `ComponentContext`, and `BaseComponent` are independent from `TemplateMetadata`, `TemplateContext`, `BaseTemplate`, and `TemplateRegistry`; neither registry imports or registers objects from the other system. `component list` presents registered metadata. `component add NAME --project PATH` resolves through the registry, creates the validated context, and calls the component's existing installation hook. The component system performs no discovery, persistence, dependency resolution, installation ordering, rollback, uninstall, package installation, template association, or generation integration.
+
+Pre-install relationship validation is an explicit, separate call. The caller supplies the complete set of component names it considers installed; ForgePy does not discover or persist that state. Validation checks direct declarations only, reports every missing dependency and active conflict for the selected component, performs no registry lookup or filesystem operation, and never invokes `install()`. It does not validate transitive relationships, version constraints, optional dependencies, or installation order.
 
 ## Template system
 
@@ -431,7 +437,7 @@ The current implementation uses Windows executable paths such as `.venv/Scripts/
 - Most subprocess failures propagate; only the initial Git commit has local error handling.
 - The generator writes into an existing project root because it uses `exist_ok=True`.
 - `BaseBuilder` has no behavioral contract, and core builder-style services do not share its inheritance hierarchy.
-- `ComponentRegistry` is in-memory and installation-agnostic, with only `pytest` registered by default. The CLI provides explicit listing and hook delegation; component discovery, persistence, dependency resolution, installation ordering, package installation, template association, and generation integration remain undefined.
+- `ComponentRegistry` is in-memory and installation-agnostic, with only `pytest` registered by default. Direct relationship validation depends entirely on caller-supplied installed names and is not invoked by the registry. Component discovery, persistence, transitive dependency resolution, installation ordering, package installation, template association, and generation integration remain undefined.
 - `config.default_structure.DEFAULT_FILES` is currently unused. `BasicFiles`, `LibraryFiles`, and `CliFiles` own their mappings; `TemplateFiles.basic()` is retained only as a compatibility facade.
 - `CliTemplate` retains per-instance resolved entry-point state. `vscode_entry_point` reports `None` before the generated `cli.py` has been written and is recomputed for each successful `create()` call.
 - The compatibility `TemplateFiles.basic()` facade creates a deliberate template-engine-to-Basic dependency until an explicit compatibility change removes the older API.
