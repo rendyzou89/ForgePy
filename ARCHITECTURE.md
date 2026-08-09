@@ -423,16 +423,17 @@ The generator then executes these stages in order:
 
 1. Resolve the requested parent location and confirm that it is an existing directory.
 2. Validate the project-name segment, require the resolved destination to remain directly below that location, and reject an existing file, directory, symlink, or junction.
-3. Create the new project root exclusively.
-4. Look up and create the selected template.
-5. Create `.venv`.
-6. Upgrade `pip`, `setuptools`, and `wheel`.
-7. Install packages from `requirements.txt` when present and non-empty.
-8. Initialize Git and attempt an initial commit.
-9. Write Visual Studio Code configuration.
-10. Print the resulting project path.
+3. Look up the selected template and propagate `KeyError` when its name is unknown.
+4. Create the new project root exclusively.
+5. Create the selected template.
+6. Create `.venv`.
+7. Upgrade `pip`, `setuptools`, and `wheel`.
+8. Install packages from `requirements.txt` when present and non-empty.
+9. Initialize Git and attempt an initial commit.
+10. Write Visual Studio Code configuration.
+11. Print the resulting project path.
 
-All destination checks occur before the project root or template files are created. Existing destinations are never merged with ForgePy output. Template lookup still follows root creation and retains its existing `KeyError` semantics.
+All destination checks and template lookup occur before the project root or template files are created. Existing destinations are never merged with ForgePy output. Unknown template names retain the registry's existing `KeyError` semantics without leaving an empty project root.
 
 ```mermaid
 sequenceDiagram
@@ -461,9 +462,9 @@ sequenceDiagram
     C->>C: Resolve CLI, persisted, and prompt/basic values
     C->>G: create(name, location, template)
     G->>G: Resolve location and validate a new direct-child destination
-    G->>G: Create project root exclusively
     G->>TR: get(template_name)
     TR-->>G: Selected template instance
+    G->>G: Create project root exclusively
     G->>T: create(project root)
     T->>TC: Build project/package context
     TC-->>T: Immutable generation data

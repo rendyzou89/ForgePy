@@ -251,6 +251,12 @@ Sprint 11.2 preserves `<project>/.forgepy/components.json` while resolving and c
 
 Missing in-project state remains empty and side-effect free; malformed state remains unchanged; successful saves retain same-directory temporary files, flush/`fsync`, and atomic replacement. Registry, validation, installer sequencing, concrete components, project generation, and the existing CLI error policy remain unchanged.
 
+## Completed — Sprint 11.3 Template Validation Ordering
+
+Sprint 11.3 preserves destination validation precedence and the registry's existing `KeyError` lookup contract while moving template lookup before exclusive project-root creation. An unknown template now leaves no project directory, template file, builder operation, subprocess action, dependency installation, or Git initialization artifact.
+
+The `basic`, `library`, and `cli` registrations, generated output, project-destination safety, CLI error policy, and remaining lifecycle stages are unchanged.
+
 ## Planned — Stabilization Toward v1.0
 
 These are outcome-oriented priorities, not guaranteed feature commitments.
@@ -263,7 +269,7 @@ These are outcome-oriented priorities, not guaranteed feature commitments.
 ### Verification and Failure Behavior
 
 - Continue expanding automated coverage across builders, the full generator lifecycle, and subprocess failure boundaries.
-- Define predictable validation for unknown templates, missing tools, and failed subprocesses; destination-name and existing-target validation is implemented.
+- Define predictable validation for missing tools and failed subprocesses; destination, existing-target, and pre-write unknown-template validation are implemented.
 - Retain documented manual checks until automated infrastructure covers them.
 
 ### Compatibility and Support

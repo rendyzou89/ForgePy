@@ -53,6 +53,9 @@ class ProjectGenerator:
                 f"location: '{resolved_destination}'."
             )
 
+        registry = TemplateRegistry()
+        template = registry.get(template_name)
+
         destination.mkdir(
             parents=True,
             exist_ok=False,
@@ -61,10 +64,6 @@ class ProjectGenerator:
         # ==========================
         # Template
         # ==========================
-
-        registry = TemplateRegistry()
-
-        template = registry.get(template_name)
 
         template.create(config.root)
 
