@@ -146,11 +146,11 @@ Sprint 9.2 adds only the declarative properties currently needed to describe a c
 
 Sprint 9.2 does not change the ForgePy version or existing template behavior.
 
-## In Progress — Sprint 9.3 Built-in Pytest Component
+## Completed — Sprint 9.3 Built-in Pytest Component
 
 Sprint 9.3 proves the existing component contracts with one real built-in and no new orchestration layer.
 
-| Area | Current Sprint 9.3 scope |
+| Area | Implemented Sprint 9.3 behavior |
 | --- | --- |
 | Component | `pytest` metadata and a manifest owning only project-relative `pytest.ini`. |
 | Installation | Exclusive creation of deterministic pytest configuration inside an explicitly supplied existing project. |
@@ -159,6 +159,19 @@ Sprint 9.3 proves the existing component contracts with one real built-in and no
 | Integration | No package installation, CLI, template, configuration, builder, or `ProjectGenerator` integration. |
 
 Sprint 9.3 does not change the ForgePy version or existing template output.
+
+## Completed — Sprint 9.4 Component CLI
+
+Sprint 9.4 exposes the existing component catalog and installation hook without changing component architecture or project generation.
+
+| Area | Implemented Sprint 9.4 behavior |
+| --- | --- |
+| Listing | `component list` displays registered component names and descriptions. |
+| Installation | `component add NAME --project PATH` resolves the registry entry, validates an existing project context, and delegates to `install(context)`. |
+| Safety | Unknown names, invalid project paths, and existing owned targets produce friendly errors; exclusive component writes remain authoritative. |
+| Boundaries | No package installation, discovery, persistence, dependency resolution, rollback, uninstall, template association, or `ProjectGenerator` change. |
+
+Sprint 9.4 does not change ForgePy version `0.6.0` or existing template output.
 
 ## Planned — Stabilization Toward v1.0
 

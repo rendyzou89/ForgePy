@@ -2,7 +2,7 @@
 
 ## Overview
 
-ForgePy is a layered command-line application. The CLI parses user input and selects a command, the create command delegates to `ProjectGenerator`, and the generator coordinates template rendering and setup services. The template registry keeps descriptive metadata alongside executable templates so listing does not invoke generation. Built-in templates separate per-generation context, template-owned file mappings, and explicit VS Code entry-point rules; their common execution layer delegates folder and file writes to the existing builders. An independent component package provides metadata, a declarative installation manifest, a validated existing-project context, a minimal installation hook, one isolated `pytest` built-in, and an in-memory registry; it is not connected to the application or generation flow.
+ForgePy is a layered command-line application. The CLI parses user input and selects a command, the create command delegates to `ProjectGenerator`, and the generator coordinates template rendering and setup services. The template registry keeps descriptive metadata alongside executable templates so listing does not invoke generation. Built-in templates separate per-generation context, template-owned file mappings, and explicit VS Code entry-point rules; their common execution layer delegates folder and file writes to the existing builders. An independent component package provides metadata, a declarative installation manifest, a validated existing-project context, a minimal installation hook, one isolated `pytest` built-in, and an in-memory registry. The component CLI lists that catalog and delegates explicit installation to the existing hook without entering the generation flow.
 
 ## Directory structure
 
@@ -54,6 +54,7 @@ ForgePy/
 | `cli/commands/__init__.py` | Registers the built-in commands in one explicit catalog. |
 | `cli/commands/create_command.py` | Resolves project name, location, and template inputs before invoking project generation. |
 | `cli/commands/config_command.py` | Adapts configuration actions, output, and ForgePy configuration errors for the CLI. |
+| `cli/commands/component_command.py` | Lists registered components and delegates explicit existing-project installation to their hooks. |
 | `cli/dispatcher.py` | Builds command lookup from the shared catalog; defaults to `create`. |
 | `cli/commands/` | Validates command-level input and invokes application services. |
 | `models/project_config.py` | Stores project name and location and derives the root path. |
@@ -148,6 +149,7 @@ flowchart TD
     Dispatcher --> List
     Dispatcher --> Version
     Dispatcher --> Config
+    Dispatcher --> Component[ComponentCommand]
 
     Create --> UserConfig
     Create --> Generator[ProjectGenerator]
@@ -155,6 +157,9 @@ flowchart TD
     Registry --> TemplateMetadata[TemplateMetadata]
     Version --> VersionConfig[config.version]
     Config --> UserConfig[ConfigStore]
+    Component --> ComponentRegistry
+    Component --> ComponentContext
+    Component -->|install context| BaseComponent
     UserConfig --> ConfigFile[~/.forgepy/config.json]
 
     subgraph ComponentFoundation[Independent component foundation]
@@ -203,14 +208,14 @@ flowchart TD
     VSCode --> VSCodeTemplates[templates.vscode]
 ```
 
-CLI and orchestration layers depend on lower-level services. Template content modules do not depend on the CLI or generator. Builders receive paths and content rather than parsing arguments or selecting templates. No dependency connects the component foundation to `main.py`, CLI commands, configuration, templates, builders, `ProjectGenerator`, or generated projects.
+CLI and orchestration layers depend on lower-level services. Template content modules do not depend on the CLI or generator. Builders receive paths and content rather than parsing arguments or selecting templates. `ComponentCommand` is the only application connection to the component foundation; components remain disconnected from configuration, templates, builders, `ProjectGenerator`, and generated-project creation.
 
 ## Class relationships
 
-- `Command` defines the shared name, help metadata, parser-configuration hook, and execution contract implemented by `CreateCommand`, `ListCommand`, `VersionCommand`, and `ConfigCommand`.
+- `Command` defines the shared name, help metadata, parser-configuration hook, and execution contract implemented by `CreateCommand`, `ListCommand`, `VersionCommand`, `ConfigCommand`, and `ComponentCommand`.
 - `cli.commands.create_commands()` is the single built-in command catalog used by both `Parser` and `Dispatcher`.
 - `Dispatcher` derives its CLI-name mapping from that catalog.
-- `CreateCommand` resolves explicit, persisted, and interactive/default inputs before invoking `ProjectGenerator`; `ListCommand` reads descriptive metadata from `TemplateRegistry`, `VersionCommand` reads canonical application-version metadata, and `ConfigCommand` delegates user-setting operations to `ConfigStore`.
+- `CreateCommand` resolves explicit, persisted, and interactive/default inputs before invoking `ProjectGenerator`; `ListCommand` reads descriptive metadata from `TemplateRegistry`, `VersionCommand` reads canonical application-version metadata, `ConfigCommand` delegates user-setting operations to `ConfigStore`, and `ComponentCommand` adapts component lookup, context validation, installation, and errors for the CLI.
 - `ProjectConfig` is a slotted dataclass used by `ProjectGenerator` to derive the target root.
 - `ComponentMetadata` is a frozen, slotted dataclass containing `name`, `description`, component `version`, `author`, and immutable `tags`. Construction validates scalar types, rejects empty or whitespace-only names, and snapshots tag iterables as tuples.
 - `ComponentManifest` is a frozen, slotted dataclass containing owned or managed project-relative `pathlib.Path` entries, dependency names, and conflict names. Construction snapshots collections as tuples; rejects invalid or empty entries, duplicates, absolute paths, and lexical parent traversal; and performs no filesystem resolution.
@@ -232,7 +237,7 @@ CLI and orchestration layers depend on lower-level services. Template content mo
 
 ForgePy registers only `PytestComponent` by default. `ComponentRegistry` remains an installation- and resolution-agnostic in-memory catalog: `register(component)` validates its contract, component/metadata identity, and absence of self-references, then stores one `BaseComponent`; `get(name)` returns the registered instance or preserves the standard `KeyError`; and `list_components()` returns an immutable tuple in registration order. Registration does not install components, look up dependencies, evaluate relationships between components, or select installation order.
 
-`ComponentMetadata`, `ComponentManifest`, `ComponentContext`, and `BaseComponent` are independent from `TemplateMetadata`, `TemplateContext`, `BaseTemplate`, and `TemplateRegistry`; neither registry imports or registers objects from the other system. Component installation is an explicit hook supplied with an existing project directory. The foundation performs no discovery, persistence, dependency resolution, installation ordering, rollback, uninstall, installation orchestration, CLI presentation, template association, or generation integration.
+`ComponentMetadata`, `ComponentManifest`, `ComponentContext`, and `BaseComponent` are independent from `TemplateMetadata`, `TemplateContext`, `BaseTemplate`, and `TemplateRegistry`; neither registry imports or registers objects from the other system. `component list` presents registered metadata. `component add NAME --project PATH` resolves through the registry, creates the validated context, and calls the component's existing installation hook. The component system performs no discovery, persistence, dependency resolution, installation ordering, rollback, uninstall, package installation, template association, or generation integration.
 
 ## Template system
 
@@ -307,6 +312,7 @@ flowchart LR
     Dispatch -->|list| List[ListCommand]
     Dispatch -->|version| Version[VersionCommand]
     Dispatch -->|config| Config[ConfigCommand]
+    Dispatch -->|component| Component[ComponentCommand]
     Create --> Resolve[Resolve create inputs]
     Resolve -->|location or template omitted| Store[ConfigStore]
     Store --> Resolve
@@ -318,12 +324,15 @@ flowchart LR
     Version --> Metadata[config.version + platform]
     Config -->|show / set / reset| Store[ConfigStore]
     Store --> UserFile[~/.forgepy/config.json]
+    Component -->|list| ComponentRegistry[ComponentRegistry]
+    Component -->|add NAME + PATH| ComponentContext[ComponentContext]
+    ComponentContext --> Install[BaseComponent.install]
 ```
 
 ### Startup and dispatch
 
 1. `main()` creates `Parser` and parses `sys.argv` through `argparse`.
-2. `Dispatcher` selects `create`, `list`, `version`, or `config`.
+2. `Dispatcher` selects `create`, `list`, `version`, `config`, or `component`.
 3. With no subcommand, the dispatcher selects `create` for interactive compatibility.
 4. The selected command receives the parsed `Namespace`.
 
@@ -422,7 +431,7 @@ The current implementation uses Windows executable paths such as `.venv/Scripts/
 - Most subprocess failures propagate; only the initial Git commit has local error handling.
 - The generator writes into an existing project root because it uses `exist_ok=True`.
 - `BaseBuilder` has no behavioral contract, and core builder-style services do not share its inheritance hierarchy.
-- `ComponentRegistry` is in-memory and installation-agnostic, with only `pytest` registered by default. Component discovery, persistence, dependency resolution, installation orchestration, CLI exposure, template association, and generation integration are undefined.
+- `ComponentRegistry` is in-memory and installation-agnostic, with only `pytest` registered by default. The CLI provides explicit listing and hook delegation; component discovery, persistence, dependency resolution, installation ordering, package installation, template association, and generation integration remain undefined.
 - `config.default_structure.DEFAULT_FILES` is currently unused. `BasicFiles`, `LibraryFiles`, and `CliFiles` own their mappings; `TemplateFiles.basic()` is retained only as a compatibility facade.
 - `CliTemplate` retains per-instance resolved entry-point state. `vscode_entry_point` reports `None` before the generated `cli.py` has been written and is recomputed for each successful `create()` call.
 - The compatibility `TemplateFiles.basic()` facade creates a deliberate template-engine-to-Basic dependency until an explicit compatibility change removes the older API.
@@ -452,7 +461,7 @@ Apply the design principles and Definition of Done in [`ENGINEERING_PRINCIPLES.m
 
 - Register only `BaseComponent` implementations with valid `ComponentMetadata` and matching non-empty names.
 - Keep the default `ComponentRegistry` catalog limited to the explicitly approved `pytest` component until another built-in is separately approved.
-- Treat installation, persistence, discovery, dependency handling, CLI exposure, template association, and generation integration as separate future requirements.
+- Keep persistence, discovery, dependency handling, package installation, template association, and generation integration outside the component CLI.
 
 ### User Configuration
 

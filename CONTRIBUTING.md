@@ -79,7 +79,7 @@ The repository uses the Python standard library `unittest` framework for focused
 Relevant coverage includes:
 
 - user configuration defaults, persistence, validation, updates, resets, and error handling
-- CLI parsing and dispatch for `create`, `list`, `version`, and `config`
+- CLI parsing and dispatch for `create`, `list`, `version`, `config`, and `component`
 - `config show/set/reset` output, persistence, validation, and malformed-file handling
 - validation of interactive and explicit create inputs
 - create precedence from explicit location/template arguments through persisted defaults to the existing prompt/`basic` fallback
@@ -107,6 +107,8 @@ python main.py --help
 python main.py version
 python main.py list
 python main.py config --help
+python main.py component --help
+python main.py component list
 ```
 
 `config show` reads and prints the effective user configuration, while `config set` and `config reset` write `~/.forgepy/config.json`. Run all three against an isolated home during recorded manual verification so user values are neither changed nor exposed in logs. On Windows PowerShell, use a process-scoped temporary `USERPROFILE` and restore it afterward:
