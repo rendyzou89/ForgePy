@@ -5,6 +5,7 @@ Seluruh command bawaan didaftarkan pada module ini.
 """
 
 from cli.command import Command
+from cli.commands.component_command import ComponentCommand
 from cli.commands.config_command import ConfigCommand
 from cli.commands.create_command import CreateCommand
 from cli.commands.list_command import ListCommand
@@ -27,4 +28,5 @@ def create_commands() -> tuple[Command, ...]:
         VersionCommand(),
         ListCommand(),
         ConfigCommand(),
+        ComponentCommand(),
     )
