@@ -233,6 +233,12 @@ Sprint 9.9 adds `RuffComponent` as the second built-in, registered deterministic
 
 The component uses the existing installer, state store, relationship validator, and CLI flows unchanged. It does not edit `pyproject.toml`, install Ruff, invoke package tools, or add dependencies/conflicts, resolution, rollback, or special CLI handling.
 
+## Completed — Sprint 10.0 Built-in GitHub Actions Component
+
+Sprint 10.0 adds `GitHubActionsComponent` as the third built-in, registered after `pytest` and `ruff`. Its manifest owns only `.github/workflows/ci.yml`; installation creates the required parent directories and exclusively writes a minimal deterministic workflow for checkout, Python setup, CI-only pytest and Ruff installation, linting, and tests.
+
+The component declares no ForgePy component dependencies because its workflow installs its own CI tools. It uses the existing registry, installer, state, validation, and generic CLI paths unchanged; local installation does not access the network, install packages, or modify `requirements.txt` or `pyproject.toml`.
+
 ## Planned — Stabilization Toward v1.0
 
 These are outcome-oriented priorities, not guaranteed feature commitments.

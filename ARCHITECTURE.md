@@ -2,7 +2,7 @@
 
 ## Overview
 
-ForgePy is a layered command-line application. The CLI parses user input and selects a command, the create command delegates to `ProjectGenerator`, and the generator coordinates template rendering and setup services. The template registry keeps descriptive metadata alongside executable templates so listing does not invoke generation. Built-in templates separate per-generation context, template-owned file mappings, and explicit VS Code entry-point rules; their common execution layer delegates folder and file writes to the existing builders. An independent component package provides metadata, a declarative installation manifest, a validated existing-project context, minimal installation hooks, the `pytest` and `ruff` built-ins, and an in-memory registry. The component CLI lists that catalog, reads project-local installed state, and delegates explicit installation to `ComponentInstaller` without entering the generation flow.
+ForgePy is a layered command-line application. The CLI parses user input and selects a command, the create command delegates to `ProjectGenerator`, and the generator coordinates template rendering and setup services. The template registry keeps descriptive metadata alongside executable templates so listing does not invoke generation. Built-in templates separate per-generation context, template-owned file mappings, and explicit VS Code entry-point rules; their common execution layer delegates folder and file writes to the existing builders. An independent component package provides metadata, a declarative installation manifest, a validated existing-project context, minimal installation hooks, the `pytest`, `ruff`, and `github-actions` built-ins, and an in-memory registry. The component CLI lists that catalog, reads project-local installed state, and delegates explicit installation to `ComponentInstaller` without entering the generation flow.
 
 ## Directory structure
 
@@ -20,6 +20,7 @@ ForgePy/
 |   |-- component_registry.py In-memory built-in and explicit registration
 |   |-- component_state.py    Project-local installed-name persistence
 |   |-- component_validation.py Stateless direct relationship validation
+|   |-- github_actions_component.py Built-in GitHub Actions CI workflow
 |   |-- pytest_component.py    Built-in isolated pytest configuration
 |   `-- ruff_component.py      Built-in isolated Ruff configuration
 |-- config/                   Application and user configuration
@@ -76,6 +77,7 @@ ForgePy/
 | `components/component_registry.py` | Registers the built-in catalog deterministically, validates explicit in-memory registrations, and provides lookup and immutable ordered listing. |
 | `components/component_state.py` | Safely persists deterministic installed component names under an explicitly supplied existing project. |
 | `components/component_validation.py` | Validates direct manifest dependencies and conflicts against caller-supplied installed names without side effects. |
+| `components/github_actions_component.py` | Defines the built-in component that exclusively creates its declared `.github/workflows/ci.yml` in an existing project. |
 | `components/pytest_component.py` | Defines the built-in component that exclusively creates its declared `pytest.ini` in an existing project. |
 | `components/ruff_component.py` | Defines the built-in component that exclusively creates its declared `ruff.toml` in an existing project. |
 | `templates/basic/basic_template.py` | Declares the basic metadata, folders, file mapping, and `app.py` VS Code default through shared execution hooks. |
@@ -99,6 +101,7 @@ ForgePy/
 | `tests/test_component_installer.py` | Verifies fixed installation sequencing, pre-install rejection, post-success recording, partial-success behavior, and boundary isolation. |
 | `tests/test_component_state.py` | Verifies isolated project-local state loading, validation, deterministic atomic persistence, and registry independence. |
 | `tests/test_component_validation.py` | Verifies direct dependency/conflict checks, aggregated failures, registry isolation, and validation without writes or installation. |
+| `tests/test_github_actions_component.py` | Verifies GitHub Actions metadata, manifest, registration order, nested workflow creation, installer integration, isolation, and existing-target behavior. |
 | `tests/test_pytest_component.py` | Verifies pytest metadata, manifest, deterministic registration, isolated installation, and existing-target behavior. |
 | `tests/test_ruff_component.py` | Verifies Ruff metadata, manifest, deterministic registration, isolated installation, installer integration, and existing-target behavior. |
 | `tests/test_config_command.py` | Verifies configuration parsing, dispatch, output, persistence, reset, and error handling with an isolated home. |
@@ -238,11 +241,12 @@ CLI and orchestration layers depend on lower-level services. Template content mo
 - `ComponentContext` contains only a `pathlib.Path` for an existing project directory and rejects missing paths, files, and non-`Path` values before installation.
 - `BaseComponent` exposes abstract `name`, `metadata`, `manifest`, and `install(context)` members. The hook defines no orchestration, rollback, discovery, or dependency behavior.
 - `ComponentInstaller.install(name, project_path)` owns only the fixed sequence connecting registry lookup, context validation, project-local state loading, already-installed rejection, direct relationship validation, one installation hook, and state recording after hook success.
-- `ComponentRegistry` deterministically registers `PytestComponent` followed by `RuffComponent`, stores component instances directly, requires matching component and metadata names, rejects self-dependency, self-conflict, and duplicate registrations before mutation, preserves registration order, and returns an immutable tuple from `list_components()`.
+- `ComponentRegistry` deterministically registers `PytestComponent`, `RuffComponent`, then `GitHubActionsComponent`, stores component instances directly, requires matching component and metadata names, rejects self-dependency, self-conflict, and duplicate registrations before mutation, preserves registration order, and returns an immutable tuple from `list_components()`.
 - `ComponentStateStore` uses an existing project path validated through `ComponentContext`, exposes load/save/add/membership operations, and atomically persists only installed component names at `.forgepy/components.json`. Missing state is empty; malformed state raises a component-state error and is not overwritten implicitly.
 - `validate_component(component, installed_components)` checks only the selected component's direct manifest relationships against an explicit iterable of installed names. `ComponentValidationError` reports ordered missing dependencies and active conflicts together without installing or resolving anything.
 - `PytestComponent` declares only `pytest.ini`, has no dependencies or conflicts, and installs by exclusively creating deterministic pytest configuration under `ComponentContext.project_path`. An existing target raises `FileExistsError` without modification.
 - `RuffComponent` declares only `ruff.toml`, has no dependencies or conflicts, and installs by exclusively creating deterministic Ruff configuration under `ComponentContext.project_path`. An existing target raises `FileExistsError` without modification; no Ruff package or executable is installed.
+- `GitHubActionsComponent` declares only `.github/workflows/ci.yml`, has no ForgePy component dependencies or conflicts, creates required parent directories, and exclusively writes a minimal deterministic Python CI workflow. The workflow installs pytest and Ruff on its GitHub Actions runner; local component installation installs no packages and modifies no project dependency files.
 - `TemplateMetadata` is a frozen, slotted dataclass containing `name`, `description`, template `version`, `author`, and immutable `tags`. Construction validates scalar types, rejects empty or whitespace-only names, and snapshots tag iterables as tuples.
 - `BaseTemplate` remains the stable public `name`, `create()`, metadata, and `vscode_entry_point` contract. Its compatibility defaults for legacy subclasses are unchanged.
 - `FileTemplate` is an opt-in `BaseTemplate` implementation used by the three built-ins. It derives `name` from the class's immutable metadata, builds a `TemplateContext`, creates declared folders, writes the ordered template-owned mapping through `FileBuilder`, and assigns its resolved VS Code entry point only after all writes succeed. `_DEFAULT_VSCODE_ENTRY_POINT` supplies static behavior, while `_vscode_entry_point_for(context)` resolves context-derived paths.
@@ -255,7 +259,7 @@ CLI and orchestration layers depend on lower-level services. Template content mo
 
 ## Component registry foundation
 
-ForgePy registers `PytestComponent` followed by `RuffComponent` by default. `ComponentRegistry` remains an installation- and resolution-agnostic in-memory catalog: `register(component)` validates its contract, component/metadata identity, and absence of self-references, then stores one `BaseComponent`; `get(name)` returns the registered instance or preserves the standard `KeyError`; and `list_components()` returns an immutable tuple in registration order. Registration does not install components, look up dependencies, evaluate relationships between components, or select installation order.
+ForgePy registers `PytestComponent`, `RuffComponent`, then `GitHubActionsComponent` by default. `ComponentRegistry` remains an installation- and resolution-agnostic in-memory catalog: `register(component)` validates its contract, component/metadata identity, and absence of self-references, then stores one `BaseComponent`; `get(name)` returns the registered instance or preserves the standard `KeyError`; and `list_components()` returns an immutable tuple in registration order. Registration does not install components, look up dependencies, evaluate relationships between components, or select installation order.
 
 `ComponentMetadata`, `ComponentManifest`, `ComponentContext`, and `BaseComponent` are independent from `TemplateMetadata`, `TemplateContext`, `BaseTemplate`, and `TemplateRegistry`; neither registry imports or registers objects from the other system. `component list` presents registered metadata without invoking installation. `component installed --project PATH` presents every name stored for that project without registry filtering or filesystem inference. `component add NAME --project PATH` delegates the fixed installation and state-recording sequence to `ComponentInstaller`. The component system performs no discovery, dependency resolution, installation ordering, rollback, uninstall, package installation, template association, or generation integration.
 
@@ -489,7 +493,7 @@ The current implementation uses Windows executable paths such as `.venv/Scripts/
 - Most subprocess failures propagate; only the initial Git commit has local error handling.
 - The generator writes into an existing project root because it uses `exist_ok=True`.
 - `BaseBuilder` has no behavioral contract, and core builder-style services do not share its inheritance hierarchy.
-- `ComponentRegistry` is in-memory and installation-state-agnostic, with `pytest` and `ruff` registered by default. `ComponentInstaller` coordinates explicit library and CLI add calls without moving behavior into the registry, store, validator, or component. Discovery, transitive dependency resolution, installation ordering, rollback, package installation, template association, and generation integration remain undefined.
+- `ComponentRegistry` is in-memory and installation-state-agnostic, with `pytest`, `ruff`, and `github-actions` registered by default. `ComponentInstaller` coordinates explicit library and CLI add calls without moving behavior into the registry, store, validator, or component. Discovery, transitive dependency resolution, installation ordering, rollback, package installation, template association, and generation integration remain undefined.
 - `config.default_structure.DEFAULT_FILES` is currently unused. `BasicFiles`, `LibraryFiles`, and `CliFiles` own their mappings; `TemplateFiles.basic()` is retained only as a compatibility facade.
 - `CliTemplate` retains per-instance resolved entry-point state. `vscode_entry_point` reports `None` before the generated `cli.py` has been written and is recomputed for each successful `create()` call.
 - The compatibility `TemplateFiles.basic()` facade creates a deliberate template-engine-to-Basic dependency until an explicit compatibility change removes the older API.
@@ -518,7 +522,7 @@ Apply the design principles and Definition of Done in [`ENGINEERING_PRINCIPLES.m
 ### Components
 
 - Register only `BaseComponent` implementations with valid `ComponentMetadata` and matching non-empty names.
-- Keep the default `ComponentRegistry` catalog limited to the explicitly approved `pytest` and `ruff` components, registered in that order, until another built-in is separately approved.
+- Keep the default `ComponentRegistry` catalog limited to the explicitly approved `pytest`, `ruff`, and `github-actions` components, registered in that order, until another built-in is separately approved.
 - Keep persistence, discovery, dependency handling, package installation, template association, and generation integration outside the component CLI.
 
 ### User Configuration

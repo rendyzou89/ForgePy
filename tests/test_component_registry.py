@@ -275,17 +275,18 @@ class ComponentRegistryTests(unittest.TestCase):
     def test_registry_starts_with_approved_built_in_components(self) -> None:
         registry = ComponentRegistry()
 
-        self.assertEqual(registered_names(registry), ("pytest", "ruff"))
+        self.assertEqual(registered_names(registry)[:2], ("pytest", "ruff"))
 
     def test_registers_a_valid_component(self) -> None:
         registry = ComponentRegistry()
         component = ExampleComponent(component_metadata())
+        initial_names = registered_names(registry)
 
         registry.register(component)
 
         self.assertEqual(
             registered_names(registry),
-            ("pytest", "ruff", "example"),
+            (*initial_names, "example"),
         )
         self.assertEqual(component.installed_contexts, [])
 
@@ -301,13 +302,14 @@ class ComponentRegistryTests(unittest.TestCase):
         registry = ComponentRegistry()
         first = ExampleComponent(component_metadata("first"))
         second = ExampleComponent(component_metadata("second"))
+        initial_names = registered_names(registry)
 
         registry.register(first)
         registry.register(second)
 
         self.assertEqual(
             registered_names(registry),
-            ("pytest", "ruff", "first", "second"),
+            (*initial_names, "first", "second"),
         )
 
     def test_registration_does_not_resolve_manifest_relationships(self) -> None:
@@ -327,6 +329,7 @@ class ComponentRegistryTests(unittest.TestCase):
     def test_rejects_duplicate_component_names(self) -> None:
         registry = ComponentRegistry()
         original = ExampleComponent(component_metadata())
+        initial_names = registered_names(registry)
         registry.register(original)
 
         with self.assertRaisesRegex(ValueError, "already registered"):
@@ -335,11 +338,12 @@ class ComponentRegistryTests(unittest.TestCase):
         self.assertIs(registry.get("example"), original)
         self.assertEqual(
             registered_names(registry),
-            ("pytest", "ruff", "example"),
+            (*initial_names, "example"),
         )
 
     def test_rejects_an_object_that_is_not_a_component(self) -> None:
         registry = ComponentRegistry()
+        initial_names = registered_names(registry)
 
         with self.assertRaisesRegex(
             TypeError,
@@ -347,12 +351,13 @@ class ComponentRegistryTests(unittest.TestCase):
         ):
             registry.register(object())  # type: ignore[arg-type]
 
-        self.assertEqual(registered_names(registry), ("pytest", "ruff"))
+        self.assertEqual(registered_names(registry), initial_names)
 
     def test_rejects_components_with_empty_names(self) -> None:
         for name in ("", "   "):
             with self.subTest(name=name):
                 registry = ComponentRegistry()
+                initial_names = registered_names(registry)
                 component = ExampleComponent(
                     component_metadata("metadata-name"),
                     name=name,
@@ -366,11 +371,12 @@ class ComponentRegistryTests(unittest.TestCase):
 
                 self.assertEqual(
                     registered_names(registry),
-                    ("pytest", "ruff"),
+                    initial_names,
                 )
 
     def test_rejects_components_with_non_string_names(self) -> None:
         registry = ComponentRegistry()
+        initial_names = registered_names(registry)
         component = ExampleComponent(
             component_metadata(),
             name=object(),  # type: ignore[arg-type]
@@ -379,10 +385,11 @@ class ComponentRegistryTests(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "name must be a string"):
             registry.register(component)
 
-        self.assertEqual(registered_names(registry), ("pytest", "ruff"))
+        self.assertEqual(registered_names(registry), initial_names)
 
     def test_rejects_invalid_component_metadata(self) -> None:
         registry = ComponentRegistry()
+        initial_names = registered_names(registry)
 
         with self.assertRaisesRegex(
             TypeError,
@@ -390,18 +397,20 @@ class ComponentRegistryTests(unittest.TestCase):
         ):
             registry.register(InvalidMetadataComponent())
 
-        self.assertEqual(registered_names(registry), ("pytest", "ruff"))
+        self.assertEqual(registered_names(registry), initial_names)
 
     def test_rejects_invalid_component_manifest(self) -> None:
         registry = ComponentRegistry()
+        initial_names = registered_names(registry)
 
         with self.assertRaises(TypeError):
             registry.register(InvalidManifestComponent(component_metadata()))
 
-        self.assertEqual(registered_names(registry), ("pytest", "ruff"))
+        self.assertEqual(registered_names(registry), initial_names)
 
     def test_rejects_self_dependency(self) -> None:
         registry = ComponentRegistry()
+        initial_names = registered_names(registry)
         component = ExampleComponent(
             component_metadata(),
             manifest=ComponentManifest(dependencies=("example",)),
@@ -410,10 +419,11 @@ class ComponentRegistryTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             registry.register(component)
 
-        self.assertEqual(registered_names(registry), ("pytest", "ruff"))
+        self.assertEqual(registered_names(registry), initial_names)
 
     def test_rejects_self_conflict(self) -> None:
         registry = ComponentRegistry()
+        initial_names = registered_names(registry)
         component = ExampleComponent(
             component_metadata(),
             manifest=ComponentManifest(conflicts=("example",)),
@@ -422,10 +432,11 @@ class ComponentRegistryTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             registry.register(component)
 
-        self.assertEqual(registered_names(registry), ("pytest", "ruff"))
+        self.assertEqual(registered_names(registry), initial_names)
 
     def test_rejects_component_and_metadata_name_mismatch(self) -> None:
         registry = ComponentRegistry()
+        initial_names = registered_names(registry)
         component = ExampleComponent(
             component_metadata("metadata-name"),
             name="component-name",
@@ -434,7 +445,7 @@ class ComponentRegistryTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "must match"):
             registry.register(component)
 
-        self.assertEqual(registered_names(registry), ("pytest", "ruff"))
+        self.assertEqual(registered_names(registry), initial_names)
         with self.assertRaises(KeyError):
             registry.get("metadata-name")
 

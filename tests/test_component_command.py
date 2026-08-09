@@ -198,6 +198,41 @@ class ComponentCommandTests(unittest.TestCase):
             "Ruff configuration for an existing Python project.",
             output,
         )
+        self.assertIn("github-actions", output)
+        self.assertIn(
+            "GitHub Actions CI for an existing Python project.",
+            output,
+        )
+
+    def test_component_add_and_installed_support_github_actions(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory)
+
+            add_output = self._run_cli(
+                "component",
+                "add",
+                "github-actions",
+                "--project",
+                str(project_path),
+            )
+            installed_output = self._run_cli(
+                "component",
+                "installed",
+                "--project",
+                str(project_path),
+            )
+
+            self.assertIn(
+                "[OK] Component 'github-actions' added",
+                add_output,
+            )
+            self.assertTrue(
+                (project_path / ".github/workflows/ci.yml").is_file()
+            )
+            self.assertEqual(
+                installed_output,
+                "Installed components:\n- github-actions\n",
+            )
 
     def test_component_add_and_installed_support_ruff(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:

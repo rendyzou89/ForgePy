@@ -33,14 +33,8 @@ class PytestComponentTests(unittest.TestCase):
         second_registry = ComponentRegistry()
 
         self.assertIsInstance(first_registry.get("pytest"), PytestComponent)
-        self.assertEqual(
-            tuple(component.name for component in first_registry.list_components()),
-            ("pytest", "ruff"),
-        )
-        self.assertEqual(
-            tuple(component.name for component in second_registry.list_components()),
-            ("pytest", "ruff"),
-        )
+        self.assertEqual(first_registry.list_components()[0].name, "pytest")
+        self.assertEqual(second_registry.list_components()[0].name, "pytest")
 
     def test_install_creates_the_declared_configuration(self) -> None:
         with TemporaryDirectory() as temporary_directory:

@@ -43,10 +43,7 @@ class RuffComponentTests(unittest.TestCase):
         registry = ComponentRegistry()
 
         self.assertIsInstance(registry.get("ruff"), RuffComponent)
-        self.assertEqual(
-            tuple(component.name for component in registry.list_components()),
-            ("pytest", "ruff"),
-        )
+        self.assertEqual(registry.list_components()[1].name, "ruff")
 
     def test_install_creates_exact_declared_configuration(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
