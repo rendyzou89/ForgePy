@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from builders.python_tools_builder import PythonToolsBuilder
@@ -27,14 +28,34 @@ class ProjectGenerator:
             print(f"[ERROR] Folder '{location_path}' tidak ditemukan.")
             return
 
+        if not location_path.is_dir():
+            raise ValueError(
+                f"Project location must be a directory: '{location_path}'."
+            )
+
         config = ProjectConfig(
             name=project_name,
             location=location_path,
         )
 
-        config.root.mkdir(
+        destination = config.root
+
+        if os.path.lexists(destination):
+            raise FileExistsError(
+                f"Project destination already exists: '{destination}'."
+            )
+
+        resolved_destination = destination.resolve(strict=False)
+
+        if resolved_destination.parent != location_path:
+            raise ValueError(
+                "Project destination must remain directly below the selected "
+                f"location: '{resolved_destination}'."
+            )
+
+        destination.mkdir(
             parents=True,
-            exist_ok=True,
+            exist_ok=False,
         )
 
         # ==========================

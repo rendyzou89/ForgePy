@@ -62,7 +62,7 @@ ForgePy/
 | `cli/commands/component_command.py` | Lists registered components, presents project-local installed state, delegates add operations to `ComponentInstaller`, and adapts operational errors for the CLI. |
 | `cli/dispatcher.py` | Builds command lookup from the shared catalog; defaults to `create`. |
 | `cli/commands/` | Validates command-level input and invokes application services. |
-| `models/project_config.py` | Stores project name and location and derives the root path. |
+| `models/project_config.py` | Validates the one-segment project name, stores the selected location, and derives the root path. |
 | `core/project_generator.py` | Orchestrates the complete create workflow. |
 | `core/environment_builder.py` | Creates `.venv` with the running Python interpreter. |
 | `core/requirements_installer.py` | Installs the generated requirements with the new environment's `pip.exe`. |
@@ -235,7 +235,7 @@ CLI and orchestration layers depend on lower-level services. Template content mo
 - `cli.commands.create_commands()` is the single built-in command catalog used by both `Parser` and `Dispatcher`.
 - `Dispatcher` derives its CLI-name mapping from that catalog.
 - `CreateCommand` resolves explicit, persisted, and interactive/default inputs before invoking `ProjectGenerator`; `ListCommand` reads descriptive metadata from `TemplateRegistry`, `VersionCommand` reads canonical application-version metadata, `ConfigCommand` delegates user-setting operations to `ConfigStore`, and `ComponentCommand` reads installed state or delegates add operations to `ComponentInstaller` while adapting operational errors for the CLI.
-- `ProjectConfig` is a slotted dataclass used by `ProjectGenerator` to derive the target root.
+- `ProjectConfig` is a slotted dataclass used by `ProjectGenerator` to derive the target root. Its project name must be one non-empty filesystem segment: dot names, absolute and drive-qualified names, separators, and lexical multi-component names are rejected explicitly.
 - `ComponentMetadata` is a frozen, slotted dataclass containing `name`, `description`, component `version`, `author`, and immutable `tags`. Construction validates scalar types, rejects empty or whitespace-only names, and snapshots tag iterables as tuples.
 - `ComponentManifest` is a frozen, slotted dataclass containing owned or managed project-relative `pathlib.Path` entries, dependency names, and conflict names. Construction snapshots collections as tuples; rejects invalid or empty entries, duplicates, absolute paths, and lexical parent traversal; and performs no filesystem resolution.
 - `ComponentContext` contains only a `pathlib.Path` for an existing project directory and rejects missing paths, files, and non-`Path` values before installation.
@@ -421,15 +421,18 @@ Argparse uses `None` for an omitted template so an explicit `--template basic` r
 
 The generator then executes these stages in order:
 
-1. Resolve the requested parent location and confirm that the path exists.
-2. Create the project root.
-3. Look up and create the selected template.
-4. Create `.venv`.
-5. Upgrade `pip`, `setuptools`, and `wheel`.
-6. Install packages from `requirements.txt` when present and non-empty.
-7. Initialize Git and attempt an initial commit.
-8. Write Visual Studio Code configuration.
-9. Print the resulting project path.
+1. Resolve the requested parent location and confirm that it is an existing directory.
+2. Validate the project-name segment, require the resolved destination to remain directly below that location, and reject an existing file, directory, symlink, or junction.
+3. Create the new project root exclusively.
+4. Look up and create the selected template.
+5. Create `.venv`.
+6. Upgrade `pip`, `setuptools`, and `wheel`.
+7. Install packages from `requirements.txt` when present and non-empty.
+8. Initialize Git and attempt an initial commit.
+9. Write Visual Studio Code configuration.
+10. Print the resulting project path.
+
+All destination checks occur before the project root or template files are created. Existing destinations are never merged with ForgePy output. Template lookup still follows root creation and retains its existing `KeyError` semantics.
 
 ```mermaid
 sequenceDiagram
@@ -457,7 +460,8 @@ sequenceDiagram
     end
     C->>C: Resolve CLI, persisted, and prompt/basic values
     C->>G: create(name, location, template)
-    G->>G: Resolve location and create project root
+    G->>G: Resolve location and validate a new direct-child destination
+    G->>G: Create project root exclusively
     G->>TR: get(template_name)
     TR-->>G: Selected template instance
     G->>T: create(project root)
@@ -486,12 +490,11 @@ The current implementation uses Windows executable paths such as `.venv/Scripts/
 ## Known limitations and technical debt
 
 - The full generation lifecycle assumes Windows `.venv/Scripts/*.exe` paths.
-- Automated coverage includes component metadata and registry behavior, user configuration, create-input resolution, template metadata and registry behavior, list output, shared template contracts, exact normalized template-owned file snapshots, all built-in structures, generated CLI subprocess behavior, template-aware VS Code behavior, and isolated selection through `ProjectGenerator`; the real external lifecycle and other application areas remain uncovered.
+- Automated coverage includes component metadata and registry behavior, user configuration, create-input resolution, project-name and destination safety, template metadata and registry behavior, list output, shared template contracts, exact normalized template-owned file snapshots, all built-in structures, generated CLI subprocess behavior, template-aware VS Code behavior, and isolated selection through `ProjectGenerator`; the real external lifecycle and other application areas remain uncovered.
 - `author` and `license` are persisted but not applied to generated content.
 - `TemplateRegistry.get()` raises `KeyError` for unknown names rather than producing a command-level error.
 - Template metadata has no independent versioning policy yet; `basic` records `0.6.0`, while `library` and `cli` start at `0.1.0` as template-specific revisions.
 - Most subprocess failures propagate; only the initial Git commit has local error handling.
-- The generator writes into an existing project root because it uses `exist_ok=True`.
 - `BaseBuilder` has no behavioral contract, and core builder-style services do not share its inheritance hierarchy.
 - `ComponentRegistry` is in-memory and installation-state-agnostic, with `pytest`, `ruff`, and `github-actions` registered by default. `ComponentInstaller` coordinates explicit library and CLI add calls without moving behavior into the registry, store, validator, or component. Discovery, transitive dependency resolution, installation ordering, rollback, package installation, template association, and generation integration remain undefined.
 - `config.default_structure.DEFAULT_FILES` is currently unused. `BasicFiles`, `LibraryFiles`, and `CliFiles` own their mappings; `TemplateFiles.basic()` is retained only as a compatibility facade.

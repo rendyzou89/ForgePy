@@ -239,6 +239,12 @@ Sprint 10.0 adds `GitHubActionsComponent` as the third built-in, registered afte
 
 The component declares no ForgePy component dependencies because its workflow installs its own CI tools. It uses the existing registry, installer, state, validation, and generic CLI paths unchanged; local installation does not access the network, install packages, or modify `requirements.txt` or `pyproject.toml`.
 
+## Completed — Sprint 11.1 Project Destination Safety
+
+Sprint 11.1 validates project names as one non-empty filesystem segment before generation writes. Dot names, absolute and Windows drive-qualified names, path separators, and lexical multi-component names are rejected rather than normalized into another destination.
+
+`ProjectGenerator` resolves the selected existing directory, requires the new destination to remain its direct child, and rejects every existing destination file, directory, symlink, or junction. A valid destination is created exclusively before the unchanged template and tooling stages. Unknown-template ordering, CLI error translation, generated Python/TOML quoting, rollback, and generalized filesystem ownership remain separate concerns.
+
 ## Planned — Stabilization Toward v1.0
 
 These are outcome-oriented priorities, not guaranteed feature commitments.
@@ -251,7 +257,7 @@ These are outcome-oriented priorities, not guaranteed feature commitments.
 ### Verification and Failure Behavior
 
 - Continue expanding automated coverage across builders, the full generator lifecycle, and subprocess failure boundaries.
-- Define predictable validation for unknown templates, missing tools, failed subprocesses, and existing target paths.
+- Define predictable validation for unknown templates, missing tools, and failed subprocesses; destination-name and existing-target validation is implemented.
 - Retain documented manual checks until automated infrastructure covers them.
 
 ### Compatibility and Support

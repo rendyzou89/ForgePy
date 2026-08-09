@@ -32,11 +32,12 @@ ForgePy favors understandable automation, explicit architectural boundaries, com
 - Load, validate, update, reset, and atomically save user configuration at `~/.forgepy/config.json` through `ConfigStore`.
 - Show, set, and reset persistent values through `python main.py config` without duplicating storage logic in the CLI.
 - Resolve omitted create location and template values from `default_location` and `default_template`, after explicit CLI arguments and before the existing prompt/`basic` fallback.
-- Test configuration behavior, create-input precedence, metadata and registration, all built-in entries, list output, generated structures and execution, and template-aware VS Code output with `unittest`.
+- Validate project names as one destination path segment, require a new resolved destination directly below the selected location, and reject existing destination files, directories, symlinks, or junctions before generation writes.
+- Test configuration behavior, create-input precedence, destination safety, metadata and registration, all built-in entries, list output, generated structures and execution, and template-aware VS Code output with `unittest`.
 
 The component foundation is exposed by the component CLI but remains independent from configuration, templates, builders, `ProjectGenerator`, and generated-project creation. Its `pytest`, `ruff`, and `github-actions` built-ins exclusively create their declared `pytest.ini`, `ruff.toml`, and `.github/workflows/ci.yml` files inside a validated existing project and reject existing targets. Installation uses the shared orchestrator; registry lookup still does not resolve manifest relationships.
 
-`ConfigCommand` manages all persisted values. `CreateCommand` consumes only `default_location` and `default_template`; `author` and `license` remain unused. `ProjectGenerator` does not depend on `ConfigStore`. Its shared lifecycle is unchanged. `FileTemplate` performs the repeated template-local folder/file execution while each built-in retains its established layout, content, and editor requirement.
+`ConfigCommand` manages all persisted values. `CreateCommand` consumes only `default_location` and `default_template`; `author` and `license` remain unused. `ProjectGenerator` does not depend on `ConfigStore`. Before its established template and tooling stages, it requires a validated one-segment name and a nonexistent direct-child destination. `FileTemplate` performs the repeated template-local folder/file execution while each built-in retains its established layout, content, and editor requirement.
 
 ## Repository structure
 
@@ -62,7 +63,7 @@ The root `README.md`, `requirements.txt`, and `config.py` are currently empty.
 - Template lookup uses direct dictionary indexing; an unknown template is not converted into a friendly CLI error.
 - Template metadata versioning has no release policy yet. The `basic` metadata records `0.6.0`, while `library` and `cli` start at `0.1.0`; these are independent from the ForgePy application and generated-project versions.
 - Subprocess failures generally propagate because commands use `check=True`.
-- Generation uses `exist_ok=True`, so an existing target can be written into rather than rejected.
+- Project generation rejects unsafe destination names and existing targets before creating the project root. This destination-only contract does not yet define broader generated Python/TOML name syntax or friendly CLI translation for the resulting exceptions.
 - The generated `pyproject.toml` requires Python `>=3.12`, but the ForgePy repository itself does not declare a supported Python range.
 - `ComponentRegistry` is in-memory, installation-state-agnostic, and resolution-agnostic; it registers `pytest`, `ruff`, then `github-actions` by default. `ComponentInstaller` coordinates explicit project context, state, direct validation, one hook, and post-success state recording without moving those responsibilities. `component add` delegates to that installer, while `component installed --project PATH` reads the project-local store without registry filtering or filesystem inference. The component system provides no discovery, transitive resolution, installation ordering, rollback, uninstall, local package installation, template association, or generation integration.
 - `config.default_structure.DEFAULT_FILES` is defined but unused. `BasicFiles`, `LibraryFiles`, and `CliFiles` own their complete mappings and call `TemplateManager` directly for rendered content; `TemplateFiles.basic()` remains a compatibility facade.
