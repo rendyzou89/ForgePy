@@ -20,7 +20,8 @@ ForgePy/
 |   |-- component_registry.py In-memory built-in and explicit registration
 |   |-- component_state.py    Project-local installed-name persistence
 |   |-- component_validation.py Stateless direct relationship validation
-|   `-- pytest_component.py    Built-in isolated pytest configuration
+|   |-- pytest_component.py    Built-in isolated pytest configuration
+|   `-- ruff_component.py      Built-in isolated Ruff configuration
 |-- config/                   Application and user configuration
 |   |-- default_structure.py  Generated project layout defaults
 |   |-- user_config.py        Persistent user configuration store
@@ -76,6 +77,7 @@ ForgePy/
 | `components/component_state.py` | Safely persists deterministic installed component names under an explicitly supplied existing project. |
 | `components/component_validation.py` | Validates direct manifest dependencies and conflicts against caller-supplied installed names without side effects. |
 | `components/pytest_component.py` | Defines the built-in component that exclusively creates its declared `pytest.ini` in an existing project. |
+| `components/ruff_component.py` | Defines the built-in component that exclusively creates its declared `ruff.toml` in an existing project. |
 | `templates/basic/basic_template.py` | Declares the basic metadata, folders, file mapping, and `app.py` VS Code default through shared execution hooks. |
 | `templates/basic/basic_files.py` | Owns the complete basic-template mapping and renders its content through `TemplateManager`. |
 | `templates/cli/cli_template.py` | Declares the normalized CLI context, folders, file mapping, and context-derived VS Code entry point. |
@@ -98,6 +100,7 @@ ForgePy/
 | `tests/test_component_state.py` | Verifies isolated project-local state loading, validation, deterministic atomic persistence, and registry independence. |
 | `tests/test_component_validation.py` | Verifies direct dependency/conflict checks, aggregated failures, registry isolation, and validation without writes or installation. |
 | `tests/test_pytest_component.py` | Verifies pytest metadata, manifest, deterministic registration, isolated installation, and existing-target behavior. |
+| `tests/test_ruff_component.py` | Verifies Ruff metadata, manifest, deterministic registration, isolated installation, installer integration, and existing-target behavior. |
 | `tests/test_config_command.py` | Verifies configuration parsing, dispatch, output, persistence, reset, and error handling with an isolated home. |
 | `tests/test_create_command.py` | Verifies create-input precedence, prompting, configuration errors, and generator delegation without generating a project. |
 | `tests/test_cli_template.py` | Verifies CLI metadata, registration, exact output, normalization, module execution, help, version, and editor-entry execution. |
@@ -515,7 +518,7 @@ Apply the design principles and Definition of Done in [`ENGINEERING_PRINCIPLES.m
 ### Components
 
 - Register only `BaseComponent` implementations with valid `ComponentMetadata` and matching non-empty names.
-- Keep the default `ComponentRegistry` catalog limited to the explicitly approved `pytest` component until another built-in is separately approved.
+- Keep the default `ComponentRegistry` catalog limited to the explicitly approved `pytest` and `ruff` components, registered in that order, until another built-in is separately approved.
 - Keep persistence, discovery, dependency handling, package installation, template association, and generation integration outside the component CLI.
 
 ### User Configuration
