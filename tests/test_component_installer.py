@@ -190,13 +190,16 @@ class ComponentInstallerTests(unittest.TestCase):
 
     def test_registry_remains_installation_agnostic(self) -> None:
         component = self._register()
+        registered_before_install = tuple(
+            item.name for item in self.registry.list_components()
+        )
 
         self._installer().install(component.name, self.project_path)
 
         self.assertIs(self.registry.get(component.name), component)
         self.assertEqual(
             tuple(item.name for item in self.registry.list_components()),
-            ("pytest", "ruff", "example"),
+            registered_before_install,
         )
 
     def test_orchestration_writes_nothing_outside_project(self) -> None:

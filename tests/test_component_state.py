@@ -145,12 +145,15 @@ class ComponentStateStoreTests(unittest.TestCase):
 
     def test_registry_remains_installation_state_agnostic(self) -> None:
         registry = ComponentRegistry()
+        registered_before_state_change = tuple(
+            component.name for component in registry.list_components()
+        )
 
         self.store.add("external")
 
         self.assertEqual(
             tuple(component.name for component in registry.list_components()),
-            ("pytest", "ruff"),
+            registered_before_state_change,
         )
         with self.assertRaises(KeyError):
             registry.get("external")
