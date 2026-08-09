@@ -1,4 +1,5 @@
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -33,6 +34,29 @@ class ComponentStateStoreTests(unittest.TestCase):
 
         self.assertTrue(self.store.state_directory.is_dir())
         self.assertTrue(self.store.state_path.is_file())
+
+    def test_save_uses_existing_in_project_state_directory(self) -> None:
+        self.store.state_directory.mkdir()
+
+        self.store.save(("pytest",))
+
+        self.assertEqual(self.store.load(), frozenset(("pytest",)))
+
+    def test_state_directory_file_is_rejected(self) -> None:
+        original = b"not a directory"
+        self.store.state_directory.write_bytes(original)
+
+        operations = (
+            self.store.load,
+            lambda: self.store.save(("pytest",)),
+        )
+
+        for operation in operations:
+            with self.subTest(operation=operation):
+                with self.assertRaises(ComponentStateIOError):
+                    operation()
+
+        self.assertEqual(self.store.state_directory.read_bytes(), original)
 
     def test_save_and_load_round_trip(self) -> None:
         saved = self.store.save(("pytest", "lint"))
@@ -134,6 +158,78 @@ class ComponentStateStoreTests(unittest.TestCase):
 
         self.assertEqual(self.store.state_path.read_bytes(), original)
 
+    def test_atomic_temporary_file_uses_validated_state_directory(self) -> None:
+        original_named_temporary_file = tempfile.NamedTemporaryFile
+        temporary_directories: list[Path] = []
+
+        def record_directory(*args: object, **kwargs: object):
+            temporary_directories.append(Path(kwargs["dir"]))
+            return original_named_temporary_file(*args, **kwargs)
+
+        with patch(
+            "components.component_state.tempfile.NamedTemporaryFile",
+            side_effect=record_directory,
+        ):
+            self.store.save(("pytest",))
+
+        self.assertEqual(
+            temporary_directories,
+            [self.store.state_directory.resolve()],
+        )
+        self.assertEqual(tuple(self.outside_path.iterdir()), ())
+
+    def test_outside_state_directory_link_rejects_read_and_write(self) -> None:
+        outside_state = self.outside_path / "state"
+        outside_state.mkdir()
+        outside_file = outside_state / "components.json"
+        original = b'{"installed": ["outside"]}\n'
+        outside_file.write_bytes(original)
+        self._create_directory_symlink(
+            outside_state,
+            self.store.state_directory,
+        )
+
+        operations = (
+            self.store.load,
+            lambda: self.store.save(("pytest",)),
+        )
+
+        for operation in operations:
+            with self.subTest(operation=operation):
+                with self.assertRaisesRegex(
+                    ComponentStateIOError,
+                    "resolves outside",
+                ):
+                    operation()
+
+        self.assertTrue(self.store.state_directory.is_symlink())
+        self.assertEqual(outside_file.read_bytes(), original)
+        self.assertEqual(tuple(outside_state.iterdir()), (outside_file,))
+
+    def test_outside_state_file_link_rejects_read_and_write(self) -> None:
+        self.store.state_directory.mkdir()
+        outside_file = self.outside_path / "components.json"
+        original = b'{"installed": ["outside"]}\n'
+        outside_file.write_bytes(original)
+        self._create_file_symlink(outside_file, self.store.state_path)
+
+        operations = (
+            self.store.load,
+            lambda: self.store.save(("pytest",)),
+        )
+
+        for operation in operations:
+            with self.subTest(operation=operation):
+                with self.assertRaisesRegex(
+                    ComponentStateIOError,
+                    "resolves outside",
+                ):
+                    operation()
+
+        self.assertTrue(self.store.state_path.is_symlink())
+        self.assertEqual(outside_file.read_bytes(), original)
+        self.assertEqual(tuple(self.outside_path.iterdir()), (outside_file,))
+
     def test_state_store_writes_nothing_outside_project(self) -> None:
         self.store.add("pytest")
 
@@ -166,6 +262,23 @@ class ComponentStateStoreTests(unittest.TestCase):
     def _write_raw(self, content: bytes) -> None:
         self.store.state_directory.mkdir(parents=True, exist_ok=True)
         self.store.state_path.write_bytes(content)
+
+    def _create_directory_symlink(self, target: Path, link: Path) -> None:
+        try:
+            os.symlink(target, link, target_is_directory=True)
+        except OSError as error:
+            self.skipTest(
+                "Directory symlink creation is unavailable: "
+                f"{error}"
+            )
+
+    def _create_file_symlink(self, target: Path, link: Path) -> None:
+        try:
+            os.symlink(target, link)
+        except OSError as error:
+            self.skipTest(
+                f"File symlink creation is unavailable: {error}"
+            )
 
 
 if __name__ == "__main__":

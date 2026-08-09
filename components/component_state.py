@@ -39,8 +39,10 @@ class ComponentStateStore:
     def load(self) -> frozenset[str]:
         """Return installed names, or an empty set when state is absent."""
 
+        _, state_path = self._resolve_state_paths()
+
         try:
-            content = self.state_path.read_text(encoding="utf-8")
+            content = state_path.read_text(encoding="utf-8")
             data = json.loads(content)
         except FileNotFoundError:
             return frozenset()
@@ -77,6 +79,7 @@ class ComponentStateStore:
 
         try:
             self.state_directory.mkdir(parents=True, exist_ok=True)
+            state_directory, state_path = self._resolve_state_paths()
             temporary_path: Path | None = None
 
             try:
@@ -84,17 +87,23 @@ class ComponentStateStore:
                     mode="w",
                     encoding="utf-8",
                     newline="\n",
-                    dir=self.state_directory,
+                    dir=state_directory,
                     prefix=f".{STATE_FILENAME}.",
                     suffix=".tmp",
                     delete=False,
                 ) as temporary_file:
                     temporary_path = Path(temporary_file.name)
+                    resolved_temporary_path = temporary_path.resolve()
+                    self._require_confined(
+                        resolved_temporary_path,
+                        state_directory,
+                        "temporary component-state file",
+                    )
                     temporary_file.write(serialized)
                     temporary_file.flush()
                     os.fsync(temporary_file.fileno())
 
-                temporary_path.replace(self.state_path)
+                temporary_path.replace(state_path)
             finally:
                 if temporary_path is not None and temporary_path.exists():
                     temporary_path.unlink()
@@ -118,6 +127,64 @@ class ComponentStateStore:
 
         name = next(iter(self._normalize_names((component_name,))))
         return name in self.load()
+
+    def _resolve_state_paths(self) -> tuple[Path, Path]:
+        """Return state paths only when they remain inside the project."""
+
+        if self.state_directory.exists() and not self.state_directory.is_dir():
+            raise ComponentStateIOError(
+                "ForgePy component-state directory must be a directory: "
+                f"'{self.state_directory}'."
+            )
+
+        try:
+            project_root = self.project_path.resolve()
+            state_directory = self.state_directory.resolve(strict=False)
+            state_path = self.state_path.resolve(strict=False)
+        except (OSError, RuntimeError) as error:
+            raise ComponentStateIOError(
+                "ForgePy could not resolve component state paths below "
+                f"'{self.project_path}': {error}"
+            ) from error
+
+        self._require_confined(
+            state_directory,
+            project_root,
+            "component-state directory",
+        )
+        self._require_confined(
+            state_path,
+            state_directory,
+            "component-state file",
+        )
+
+        if state_path.parent != state_directory:
+            raise ComponentStateIOError(
+                "ForgePy component-state file must resolve directly below "
+                f"the state directory: '{state_path}'."
+            )
+
+        return state_directory, state_path
+
+    @staticmethod
+    def _require_confined(
+        path: Path,
+        parent: Path,
+        path_label: str,
+    ) -> None:
+        try:
+            path.relative_to(parent)
+        except ValueError as error:
+            raise ComponentStateIOError(
+                f"ForgePy {path_label} resolves outside its required "
+                f"location: '{path}'."
+            ) from error
+
+        if path == parent:
+            raise ComponentStateIOError(
+                f"ForgePy {path_label} must be below its required location: "
+                f"'{path}'."
+            )
 
     @classmethod
     def _normalize_document(cls, data: object) -> frozenset[str]:
