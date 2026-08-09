@@ -1,4 +1,5 @@
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -143,6 +144,32 @@ class ComponentInstallerTests(unittest.TestCase):
 
         self.assertEqual(component.install_calls, 0)
         self.assertEqual(store.state_path.read_bytes(), malformed)
+
+    def test_state_confinement_failure_aborts_before_install(self) -> None:
+        component = self._register()
+        state_directory = self.project_path / ".forgepy"
+
+        try:
+            os.symlink(
+                self.outside_path,
+                state_directory,
+                target_is_directory=True,
+            )
+        except OSError as error:
+            self.skipTest(
+                "Directory symlink creation is unavailable: "
+                f"{error}"
+            )
+
+        with self.assertRaisesRegex(
+            ComponentStateIOError,
+            "resolves outside",
+        ):
+            self._installer().install(component.name, self.project_path)
+
+        self.assertEqual(component.install_calls, 0)
+        self.assertFalse((self.project_path / "example.txt").exists())
+        self.assertEqual(tuple(self.outside_path.iterdir()), ())
 
     def test_component_install_failure_leaves_state_unchanged(self) -> None:
         component = self._register(install_error=RuntimeError("failed"))

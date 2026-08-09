@@ -245,6 +245,12 @@ Sprint 11.1 validates project names as one non-empty filesystem segment before g
 
 `ProjectGenerator` resolves the selected existing directory, requires the new destination to remain its direct child, and rejects every existing destination file, directory, symlink, or junction. A valid destination is created exclusively before the unchanged template and tooling stages. Unknown-template ordering, CLI error translation, generated Python/TOML quoting, rollback, and generalized filesystem ownership remain separate concerns.
 
+## Completed — Sprint 11.2 Component State Confinement
+
+Sprint 11.2 preserves `<project>/.forgepy/components.json` while resolving and confining the state directory, state file, and atomic temporary file beneath the resolved project root. Existing symlinks, junctions, or equivalent redirections outside the project are rejected with a ForgePy component-state I/O error before state access or component installation.
+
+Missing in-project state remains empty and side-effect free; malformed state remains unchanged; successful saves retain same-directory temporary files, flush/`fsync`, and atomic replacement. Registry, validation, installer sequencing, concrete components, project generation, and the existing CLI error policy remain unchanged.
+
 ## Planned — Stabilization Toward v1.0
 
 These are outcome-oriented priorities, not guaranteed feature commitments.

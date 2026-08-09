@@ -33,6 +33,7 @@ ForgePy favors understandable automation, explicit architectural boundaries, com
 - Show, set, and reset persistent values through `python main.py config` without duplicating storage logic in the CLI.
 - Resolve omitted create location and template values from `default_location` and `default_template`, after explicit CLI arguments and before the existing prompt/`basic` fallback.
 - Validate project names as one destination path segment, require a new resolved destination directly below the selected location, and reject existing destination files, directories, symlinks, or junctions before generation writes.
+- Confine component-state reads, atomic writes, and same-directory temporary files to the resolved project root so `.forgepy` or `components.json` redirection cannot escape the project.
 - Test configuration behavior, create-input precedence, destination safety, metadata and registration, all built-in entries, list output, generated structures and execution, and template-aware VS Code output with `unittest`.
 
 The component foundation is exposed by the component CLI but remains independent from configuration, templates, builders, `ProjectGenerator`, and generated-project creation. Its `pytest`, `ruff`, and `github-actions` built-ins exclusively create their declared `pytest.ini`, `ruff.toml`, and `.github/workflows/ci.yml` files inside a validated existing project and reject existing targets. Installation uses the shared orchestrator; registry lookup still does not resolve manifest relationships.

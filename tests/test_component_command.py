@@ -1,3 +1,4 @@
+import os
 import tempfile
 import unittest
 from contextlib import redirect_stdout
@@ -384,6 +385,40 @@ class ComponentCommandTests(unittest.TestCase):
             self.assertNotIn("Traceback", output)
             self.assertFalse((project_path / "pytest.ini").exists())
             self.assertEqual(store.state_path.read_bytes(), malformed)
+
+    def test_component_add_displays_state_confinement_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_path = Path(temporary_directory)
+            project_path = temporary_path / "project"
+            outside_path = temporary_path / "outside"
+            project_path.mkdir()
+            outside_path.mkdir()
+
+            try:
+                os.symlink(
+                    outside_path,
+                    project_path / ".forgepy",
+                    target_is_directory=True,
+                )
+            except OSError as error:
+                self.skipTest(
+                    "Directory symlink creation is unavailable: "
+                    f"{error}"
+                )
+
+            output = self._run_cli(
+                "component",
+                "add",
+                "pytest",
+                "--project",
+                str(project_path),
+            )
+
+            self.assertIn("[ERROR]", output)
+            self.assertIn("resolves outside", output)
+            self.assertNotIn("Traceback", output)
+            self.assertFalse((project_path / "pytest.ini").exists())
+            self.assertEqual(tuple(outside_path.iterdir()), ())
 
     def test_component_add_displays_missing_dependency_error(self) -> None:
         component = CliTestComponent(
