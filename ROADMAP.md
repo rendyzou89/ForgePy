@@ -257,6 +257,12 @@ Sprint 11.3 preserves destination validation precedence and the registry's exist
 
 The `basic`, `library`, and `cli` registrations, generated output, project-destination safety, CLI error policy, and remaining lifecycle stages are unchanged.
 
+## Completed — Sprint 11.4 Project Name Validity
+
+Sprint 11.4 extends the one-segment destination rule with the supported Windows filename and current generated-content contract. Whitespace-only names, control characters, Windows-invalid filename characters, trailing spaces or dots, and reserved device stems (including extension forms) are rejected before template lookup or generation writes.
+
+Accepted human-readable display names remain unchanged. Library and CLI templates continue to derive their Python package identifiers through the existing separate normalization step; no general template escaping framework was added.
+
 ## Planned — Stabilization Toward v1.0
 
 These are outcome-oriented priorities, not guaranteed feature commitments.
