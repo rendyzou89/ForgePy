@@ -61,7 +61,7 @@ The root `README.md`, `requirements.txt`, and `config.py` are currently empty.
 
 - Full generation is Windows-oriented: environment tools are addressed under `.venv/Scripts` with `.exe` filenames.
 - ForgePy itself has no declared third-party runtime dependencies. Automated coverage includes configuration, create-input resolution, metadata/registry behavior, list output, the shared template contract, exact normalized output snapshots, all built-in structures, generated CLI execution, and isolated template-aware VS Code generation through `ProjectGenerator`. The generated `basic` project requires `PySide6`, `pandas`, and `openpyxl`; `library` and `cli` have empty requirements files. The full lifecycle still upgrades packaging tools and may require network access.
-- Template lookup uses direct dictionary indexing; an unknown template is not converted into a friendly CLI error.
+- Template lookup uses direct dictionary indexing and retains `KeyError` for an unknown name, but now occurs after destination validation and before project-root creation so rejection leaves no generation artifact.
 - Template metadata versioning has no release policy yet. The `basic` metadata records `0.6.0`, while `library` and `cli` start at `0.1.0`; these are independent from the ForgePy application and generated-project versions.
 - Subprocess failures generally propagate because commands use `check=True`.
 - Project generation rejects unsafe destination names and existing targets before creating the project root. This destination-only contract does not yet define broader generated Python/TOML name syntax or friendly CLI translation for the resulting exceptions.

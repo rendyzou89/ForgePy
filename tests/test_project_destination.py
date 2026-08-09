@@ -3,8 +3,10 @@
 import os
 import tempfile
 import unittest
+from contextlib import ExitStack, redirect_stdout
+from io import StringIO
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from core.project_generator import ProjectGenerator
 from models.project_config import ProjectConfig
@@ -58,6 +60,7 @@ class ProjectDestinationSafetyTests(unittest.TestCase):
                     ProjectGenerator().create(
                         project_name="nested/project",
                         location=str(location),
+                        template_name="unknown",
                     )
 
             self.assertEqual(tuple(location.iterdir()), ())
@@ -79,6 +82,7 @@ class ProjectDestinationSafetyTests(unittest.TestCase):
                     ProjectGenerator().create(
                         project_name="Existing",
                         location=str(location),
+                        template_name="unknown",
                     )
 
             self.assertEqual(existing_file.read_bytes(), original_content)
@@ -99,6 +103,7 @@ class ProjectDestinationSafetyTests(unittest.TestCase):
                     ProjectGenerator().create(
                         project_name="Existing",
                         location=str(location),
+                        template_name="unknown",
                     )
 
             self.assertEqual(destination.read_bytes(), original_content)
@@ -134,12 +139,80 @@ class ProjectDestinationSafetyTests(unittest.TestCase):
                     ProjectGenerator().create(
                         project_name="Linked",
                         location=str(location),
+                        template_name="unknown",
                     )
 
             self.assertTrue(destination.is_symlink())
             self.assertEqual(destination.resolve(), outside.resolve())
             self.assertEqual(tuple(outside.iterdir()), ())
             registry.assert_not_called()
+
+    def test_unknown_template_creates_no_project_artifacts(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            location = Path(temporary_directory)
+            destination = location / "UnknownTemplate"
+
+            with ExitStack() as stack:
+                template_create = stack.enter_context(
+                    patch("templates.basic.basic_template.BasicTemplate.create")
+                )
+                stage_calls = self._patch_generation_stages(stack)
+
+                with self.assertRaises(KeyError):
+                    ProjectGenerator().create(
+                        project_name=destination.name,
+                        location=str(location),
+                        template_name="unknown",
+                    )
+
+            self.assertFalse(destination.exists())
+            self.assertEqual(tuple(location.iterdir()), ())
+            template_create.assert_not_called()
+            for stage_call in stage_calls:
+                stage_call.assert_not_called()
+
+    def test_valid_templates_still_generate_their_owned_files(self) -> None:
+        cases = {
+            "basic": Path("app.py"),
+            "library": Path("valid_library/__init__.py"),
+            "cli": Path("valid_cli/cli.py"),
+        }
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            location = Path(temporary_directory)
+
+            for template_name, expected_file in cases.items():
+                with self.subTest(template=template_name):
+                    project_name = f"Valid-{template_name}"
+                    destination = location / project_name
+
+                    with ExitStack() as stack:
+                        stage_calls = self._patch_generation_stages(stack)
+                        stack.enter_context(redirect_stdout(StringIO()))
+                        ProjectGenerator().create(
+                            project_name=project_name,
+                            location=str(location),
+                            template_name=template_name,
+                        )
+
+                    self.assertTrue((destination / expected_file).is_file())
+                    for stage_call in stage_calls:
+                        stage_call.assert_called_once()
+
+    @staticmethod
+    def _patch_generation_stages(stack: ExitStack) -> tuple[Mock, ...]:
+        stage_paths = (
+            "core.project_generator.EnvironmentBuilder.create",
+            "core.project_generator.PythonToolsBuilder.update",
+            "core.project_generator.RequirementsInstaller.install",
+            "core.project_generator.GitBuilder.create",
+            "core.project_generator.VSCodeBuilder.create",
+        )
+
+        return tuple(
+            stack.enter_context(patch(stage_path))
+            for stage_path in stage_paths
+        )
 
 
 if __name__ == "__main__":
