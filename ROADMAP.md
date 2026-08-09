@@ -173,6 +173,20 @@ Sprint 9.4 exposes the existing component catalog and installation hook without 
 
 Sprint 9.4 does not change ForgePy version `0.6.0` or existing template output.
 
+## Completed — Sprint 9.5 Component Relationship Validation
+
+Sprint 9.5 adds a stateless pre-install check for direct manifest relationships while keeping validation separate from installation.
+
+| Area | Implemented Sprint 9.5 behavior |
+| --- | --- |
+| Installed state | Callers explicitly supply an iterable of component names considered installed. |
+| Dependencies | Every directly declared dependency must appear in that supplied state. |
+| Conflicts | No directly declared conflict may appear in that supplied state. |
+| Failure | One `ComponentValidationError` exposes ordered missing dependencies and active conflicts. |
+| Boundaries | No persistence, discovery, registry resolution, transitive resolution, version constraints, installation ordering, installation, or filesystem writes. |
+
+Sprint 9.5 does not change ForgePy version `0.6.0`, CLI behavior, project generation, or template output.
+
 ## Planned — Stabilization Toward v1.0
 
 These are outcome-oriented priorities, not guaranteed feature commitments.
