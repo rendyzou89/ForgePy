@@ -6,7 +6,7 @@
 - **Purpose:** generate a structured starter Python project from a CLI, then prepare its virtual environment, dependencies, Git repository, and VS Code configuration.
 - **Protected stable branch policy:** treat `master` as protected and stable
 - **Current stable release/tag:** `v0.6.0` (`Sprint 6 Stable`)
-- **Current development area:** Sprint 9.7, connecting component CLI add to the minimal installer.
+- **Current development area:** Sprint 9.9, adding the second built-in component through the existing architecture.
 
 `config/version.py` is the canonical ForgePy version source and reports `0.6.0`, matching the `v0.6.0` stable release tag. No release tag newer than `v0.6.0` exists.
 
@@ -20,7 +20,7 @@ ForgePy favors understandable automation, explicit architectural boundaries, com
 - Fall back to an interactive create workflow when no command is supplied.
 - Register the `basic`, `library`, and `cli` project templates through one validated registration path with immutable metadata.
 - Define immutable component metadata and manifest values, a validated existing-project context, an abstract identity/metadata/manifest/install contract, and an in-memory registry with deterministic built-in registration, explicit registration, lookup, and ordered listing.
-- Provide one built-in `pytest` component that exclusively creates a component-owned `pytest.ini` in an explicitly supplied existing project.
+- Provide built-in `pytest` and `ruff` components that exclusively create their declared standalone configuration files in an explicitly supplied existing project.
 - Generate all three built-in file templates through a shared execution layer that keeps registry metadata, project/package context, file mappings, and VS Code entry-point resolution distinct.
 - List registered template names and descriptions without invoking project generation.
 - Generate a minimal library layout with a normalized import-package directory, `tests/`, empty package initializers, shared README/Git-ignore/pyproject content, and an empty requirements file.
@@ -34,7 +34,7 @@ ForgePy favors understandable automation, explicit architectural boundaries, com
 - Resolve omitted create location and template values from `default_location` and `default_template`, after explicit CLI arguments and before the existing prompt/`basic` fallback.
 - Test configuration behavior, create-input precedence, metadata and registration, all built-in entries, list output, generated structures and execution, and template-aware VS Code output with `unittest`.
 
-The component foundation is not consumed by the CLI, configuration system, templates, builders, `ProjectGenerator`, or generated projects. Its only built-in is `pytest`, whose explicit installation hook exclusively creates the declared `pytest.ini` inside a validated existing project and rejects an existing target. No application flow invokes installation or resolves manifest relationships.
+The component foundation is exposed by the component CLI but remains independent from configuration, templates, builders, `ProjectGenerator`, and generated-project creation. Its `pytest` and `ruff` built-ins exclusively create their declared `pytest.ini` and `ruff.toml` files inside a validated existing project and reject existing targets. Installation uses the shared orchestrator; registry lookup still does not resolve manifest relationships.
 
 `ConfigCommand` manages all persisted values. `CreateCommand` consumes only `default_location` and `default_template`; `author` and `license` remain unused. `ProjectGenerator` does not depend on `ConfigStore`. Its shared lifecycle is unchanged. `FileTemplate` performs the repeated template-local folder/file execution while each built-in retains its established layout, content, and editor requirement.
 
@@ -44,7 +44,7 @@ The component foundation is not consumed by the CLI, configuration system, templ
 | --- | --- |
 | `builders/` | Folder/file creation and packaging-tool updates. |
 | `cli/` | Parser, dispatcher, command contract, and commands. |
-| `components/` | Immutable component metadata and manifest, validated project context, the minimal installation contract, the `pytest` built-in, and an in-memory registry. |
+| `components/` | Immutable component metadata and manifest, validated project context, minimal installation/state/validation contracts, the `pytest` and `ruff` built-ins, and an in-memory registry. |
 | `config/` | Version metadata, generated folder defaults, and user-level JSON configuration. |
 | `core/` | Project lifecycle and environment, Git, requirements, and VS Code services. |
 | `models/` | `ProjectConfig` data model. |
@@ -64,7 +64,7 @@ The root `README.md`, `requirements.txt`, and `config.py` are currently empty.
 - Subprocess failures generally propagate because commands use `check=True`.
 - Generation uses `exist_ok=True`, so an existing target can be written into rather than rejected.
 - The generated `pyproject.toml` requires Python `>=3.12`, but the ForgePy repository itself does not declare a supported Python range.
-- `ComponentRegistry` is in-memory, installation-state-agnostic, and resolution-agnostic; it registers only `pytest` by default. `ComponentInstaller` coordinates explicit project context, state, direct validation, one hook, and post-success state recording without moving those responsibilities. `component add` delegates to that installer, while `component installed --project PATH` reads the project-local store without registry filtering or filesystem inference. The component system provides no discovery, transitive resolution, installation ordering, rollback, uninstall, package installation, template association, or generation integration.
+- `ComponentRegistry` is in-memory, installation-state-agnostic, and resolution-agnostic; it registers `pytest` followed by `ruff` by default. `ComponentInstaller` coordinates explicit project context, state, direct validation, one hook, and post-success state recording without moving those responsibilities. `component add` delegates to that installer, while `component installed --project PATH` reads the project-local store without registry filtering or filesystem inference. The component system provides no discovery, transitive resolution, installation ordering, rollback, uninstall, package installation, template association, or generation integration.
 - `config.default_structure.DEFAULT_FILES` is defined but unused. `BasicFiles`, `LibraryFiles`, and `CliFiles` own their complete mappings and call `TemplateManager` directly for rendered content; `TemplateFiles.basic()` remains a compatibility facade.
 
 ## Near-term priorities
@@ -87,10 +87,10 @@ Use this section as the handoff point for a new developer or AI session.
 | --- | --- |
 | Stable baseline | `v0.6.0` (`Sprint 6 Stable`) |
 | Current branch policy | Repository policy treats `master` as protected; use a feature branch for implementation |
-| Active development area | Sprint 9.8 installed-component state presentation |
+| Active development area | Sprint 9.9 second built-in component |
 | Implemented CLI | `create`, `list`, `version`, `config show/set/reset`, `component list/installed/add`, plus no-command interactive create |
 | Implemented templates | `basic`, `library`, and `cli`, all with descriptive metadata |
-| Component state | Registry with one `pytest` built-in, project-local installed names, direct validation, and shared library/CLI orchestration; no generation integration |
+| Component state | Registry with `pytest` and `ruff` built-ins, project-local installed names, direct validation, and shared library/CLI orchestration; no generation integration |
 | Version source | `config/version.py`, aligned with the `v0.6.0` release tag |
 | Verification state | `unittest` covers component orchestration, state, validation, component and template metadata/registries, configuration, create precedence, list output, template architecture and output snapshots, CLI execution, and isolated template-aware VS Code generation; the real external lifecycle remains a manual check |
 

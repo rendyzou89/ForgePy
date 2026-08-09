@@ -196,7 +196,7 @@ class ComponentInstallerTests(unittest.TestCase):
         self.assertIs(self.registry.get(component.name), component)
         self.assertEqual(
             tuple(item.name for item in self.registry.list_components()),
-            ("pytest", "example"),
+            ("pytest", "ruff", "example"),
         )
 
     def test_orchestration_writes_nothing_outside_project(self) -> None:

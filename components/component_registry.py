@@ -4,6 +4,7 @@ from components.base_component import BaseComponent
 from components.component_manifest import ComponentManifest
 from components.component_metadata import ComponentMetadata
 from components.pytest_component import PytestComponent
+from components.ruff_component import RuffComponent
 
 
 class ComponentRegistry:
@@ -12,6 +13,7 @@ class ComponentRegistry:
     def __init__(self) -> None:
         self._components: dict[str, BaseComponent] = {}
         self.register(PytestComponent())
+        self.register(RuffComponent())
 
     def register(self, component: BaseComponent) -> None:
         """Register one component under its validated metadata name."""
