@@ -4,8 +4,13 @@ from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
 from cli.command import Command
-from components.component_context import ComponentContext
+from components.component_installer import (
+    ComponentAlreadyInstalledError,
+    ComponentInstaller,
+)
 from components.component_registry import ComponentRegistry
+from components.component_state import ForgePyComponentStateError
+from components.component_validation import ComponentValidationError
 
 
 class ComponentCommand(Command):
@@ -80,14 +85,24 @@ class ComponentCommand(Command):
 
     def _add(self, name: str, project_path: Path) -> None:
         try:
-            component = self._get_registry().get(name)
+            ComponentInstaller(
+                registry=self._get_registry(),
+            ).install(
+                name=name,
+                project_path=project_path,
+            )
         except KeyError:
             print(f"[ERROR] Unknown ForgePy component: '{name}'.")
             return
-
-        try:
-            context = ComponentContext(project_path=project_path)
-            component.install(context)
+        except ComponentAlreadyInstalledError as error:
+            print(f"[ERROR] {error}")
+            return
+        except ComponentValidationError as error:
+            print(f"[ERROR] {error}")
+            return
+        except ForgePyComponentStateError as error:
+            print(f"[ERROR] {error}")
+            return
         except (TypeError, ValueError) as error:
             print(f"[ERROR] Invalid project path '{project_path}': {error}")
             return
