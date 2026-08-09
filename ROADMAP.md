@@ -201,6 +201,26 @@ Sprint 9.6 adds isolated persistence for installed ForgePy component names witho
 
 Sprint 9.6 does not change ForgePy version `0.6.0`, CLI behavior, project generation, or template output.
 
+## Completed — Sprint 9.7 Component Installation Orchestration
+
+Sprint 9.7 adds one fixed, explicit installation sequence without adding resolution, transactions, or CLI integration.
+
+| Area | Implemented Sprint 9.7 behavior |
+| --- | --- |
+| Sequence | Registry lookup, context validation, state load, already-installed rejection, direct validation, one installation hook, then state recording. |
+| Failure before recording | Invalid state, relationship failure, existing targets, and hook failures leave the requested component unrecorded. |
+| Recording failure | State errors after hook success are surfaced; installed files may remain because no rollback is implemented. |
+| Boundaries | Registry, state store, validator, and components retain their responsibilities; registered and installed remain distinct. |
+| Exclusions | No automatic dependencies, ordering, graph traversal, rollback, uninstall, discovery, scanning, package installation, version locking, or CLI connection. |
+
+Sprint 9.7 keeps ForgePy version `0.6.0`, CLI syntax, project generation, and template output unchanged.
+
+### Sprint 9.7 Component CLI Integration
+
+`component add NAME --project PATH` now delegates to `ComponentInstaller`. Successful hooks are recorded in project-local state; repeated installation, direct relationship failures, malformed state, existing targets, and persistence failures receive friendly CLI output without tracebacks. `component list` remains metadata-only and side-effect free.
+
+The integration preserves existing handled-error exit status behavior and adds no rollback, resolution, ordering, discovery, package installation, or generation integration. A state-recording failure after hook success remains a surfaced partial-success condition.
+
 ## Planned — Stabilization Toward v1.0
 
 These are outcome-oriented priorities, not guaranteed feature commitments.

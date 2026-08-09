@@ -2,7 +2,7 @@
 
 ## Overview
 
-ForgePy is a layered command-line application. The CLI parses user input and selects a command, the create command delegates to `ProjectGenerator`, and the generator coordinates template rendering and setup services. The template registry keeps descriptive metadata alongside executable templates so listing does not invoke generation. Built-in templates separate per-generation context, template-owned file mappings, and explicit VS Code entry-point rules; their common execution layer delegates folder and file writes to the existing builders. An independent component package provides metadata, a declarative installation manifest, a validated existing-project context, a minimal installation hook, one isolated `pytest` built-in, and an in-memory registry. The component CLI lists that catalog and delegates explicit installation to the existing hook without entering the generation flow.
+ForgePy is a layered command-line application. The CLI parses user input and selects a command, the create command delegates to `ProjectGenerator`, and the generator coordinates template rendering and setup services. The template registry keeps descriptive metadata alongside executable templates so listing does not invoke generation. Built-in templates separate per-generation context, template-owned file mappings, and explicit VS Code entry-point rules; their common execution layer delegates folder and file writes to the existing builders. An independent component package provides metadata, a declarative installation manifest, a validated existing-project context, a minimal installation hook, one isolated `pytest` built-in, and an in-memory registry. The component CLI lists that catalog and delegates explicit installation to `ComponentInstaller` without entering the generation flow.
 
 ## Directory structure
 
@@ -14,6 +14,7 @@ ForgePy/
 |-- components/               Independent component contracts and registry
 |   |-- base_component.py     Abstract identity/metadata/manifest/install contract
 |   |-- component_context.py  Validated existing-project context
+|   |-- component_installer.py Fixed single-component installation flow
 |   |-- component_manifest.py Immutable declarative installation properties
 |   |-- component_metadata.py Immutable descriptive component metadata
 |   |-- component_registry.py In-memory built-in and explicit registration
@@ -56,7 +57,7 @@ ForgePy/
 | `cli/commands/__init__.py` | Registers the built-in commands in one explicit catalog. |
 | `cli/commands/create_command.py` | Resolves project name, location, and template inputs before invoking project generation. |
 | `cli/commands/config_command.py` | Adapts configuration actions, output, and ForgePy configuration errors for the CLI. |
-| `cli/commands/component_command.py` | Lists registered components and delegates explicit existing-project installation to their hooks. |
+| `cli/commands/component_command.py` | Lists registered components, delegates add operations to `ComponentInstaller`, and adapts operational errors for the CLI. |
 | `cli/dispatcher.py` | Builds command lookup from the shared catalog; defaults to `create`. |
 | `cli/commands/` | Validates command-level input and invokes application services. |
 | `models/project_config.py` | Stores project name and location and derives the root path. |
@@ -68,6 +69,7 @@ ForgePy/
 | `builders/` | Creates folders/files and upgrades Python packaging tools. |
 | `components/base_component.py` | Defines abstract component `name`, `metadata`, `manifest`, and minimal `install(context)` behavior. |
 | `components/component_context.py` | Validates the existing project directory supplied explicitly to installation. |
+| `components/component_installer.py` | Coordinates lookup, context, installed state, direct validation, one installation hook, and post-success state recording. |
 | `components/component_manifest.py` | Defines immutable owned-file, dependency, and conflict declarations without resolution behavior. |
 | `components/component_metadata.py` | Defines immutable descriptive metadata for component definitions. |
 | `components/component_registry.py` | Registers the built-in catalog deterministically, validates explicit in-memory registrations, and provides lookup and immutable ordered listing. |
@@ -92,6 +94,7 @@ ForgePy/
 | `config/user_config.py` | Loads, validates, updates, resets, and atomically saves user-level JSON configuration. |
 | `config/version.py` | Supplies canonical application metadata. |
 | `tests/test_component_registry.py` | Verifies component metadata, built-in and explicit registration, lookup, listing order, and rejection paths without installation side effects. |
+| `tests/test_component_installer.py` | Verifies fixed installation sequencing, pre-install rejection, post-success recording, partial-success behavior, and boundary isolation. |
 | `tests/test_component_state.py` | Verifies isolated project-local state loading, validation, deterministic atomic persistence, and registry independence. |
 | `tests/test_component_validation.py` | Verifies direct dependency/conflict checks, aggregated failures, registry isolation, and validation without writes or installation. |
 | `tests/test_pytest_component.py` | Verifies pytest metadata, manifest, deterministic registration, isolated installation, and existing-target behavior. |
@@ -164,8 +167,12 @@ flowchart TD
     Version --> VersionConfig[config.version]
     Config --> UserConfig[ConfigStore]
     Component --> ComponentRegistry
-    Component --> ComponentContext
-    Component -->|install context| BaseComponent
+    Component --> ComponentInstaller
+    ComponentInstaller --> ComponentRegistry
+    ComponentInstaller --> ComponentContext
+    ComponentInstaller --> ComponentStateStore
+    ComponentInstaller --> ComponentValidation
+    ComponentInstaller -->|install context| BaseComponent
     UserConfig --> ConfigFile[~/.forgepy/config.json]
 
     subgraph ComponentFoundation[Independent component foundation]
@@ -221,12 +228,13 @@ CLI and orchestration layers depend on lower-level services. Template content mo
 - `Command` defines the shared name, help metadata, parser-configuration hook, and execution contract implemented by `CreateCommand`, `ListCommand`, `VersionCommand`, `ConfigCommand`, and `ComponentCommand`.
 - `cli.commands.create_commands()` is the single built-in command catalog used by both `Parser` and `Dispatcher`.
 - `Dispatcher` derives its CLI-name mapping from that catalog.
-- `CreateCommand` resolves explicit, persisted, and interactive/default inputs before invoking `ProjectGenerator`; `ListCommand` reads descriptive metadata from `TemplateRegistry`, `VersionCommand` reads canonical application-version metadata, `ConfigCommand` delegates user-setting operations to `ConfigStore`, and `ComponentCommand` adapts component lookup, context validation, installation, and errors for the CLI.
+- `CreateCommand` resolves explicit, persisted, and interactive/default inputs before invoking `ProjectGenerator`; `ListCommand` reads descriptive metadata from `TemplateRegistry`, `VersionCommand` reads canonical application-version metadata, `ConfigCommand` delegates user-setting operations to `ConfigStore`, and `ComponentCommand` delegates add operations to `ComponentInstaller` while adapting operational errors for the CLI.
 - `ProjectConfig` is a slotted dataclass used by `ProjectGenerator` to derive the target root.
 - `ComponentMetadata` is a frozen, slotted dataclass containing `name`, `description`, component `version`, `author`, and immutable `tags`. Construction validates scalar types, rejects empty or whitespace-only names, and snapshots tag iterables as tuples.
 - `ComponentManifest` is a frozen, slotted dataclass containing owned or managed project-relative `pathlib.Path` entries, dependency names, and conflict names. Construction snapshots collections as tuples; rejects invalid or empty entries, duplicates, absolute paths, and lexical parent traversal; and performs no filesystem resolution.
 - `ComponentContext` contains only a `pathlib.Path` for an existing project directory and rejects missing paths, files, and non-`Path` values before installation.
 - `BaseComponent` exposes abstract `name`, `metadata`, `manifest`, and `install(context)` members. The hook defines no orchestration, rollback, discovery, or dependency behavior.
+- `ComponentInstaller.install(name, project_path)` owns only the fixed sequence connecting registry lookup, context validation, project-local state loading, already-installed rejection, direct relationship validation, one installation hook, and state recording after hook success.
 - `ComponentRegistry` deterministically registers `PytestComponent` first, stores component instances directly, requires matching component and metadata names, rejects self-dependency, self-conflict, and duplicate registrations before mutation, preserves registration order, and returns an immutable tuple from `list_components()`.
 - `ComponentStateStore` uses an existing project path validated through `ComponentContext`, exposes load/save/add/membership operations, and atomically persists only installed component names at `.forgepy/components.json`. Missing state is empty; malformed state raises a component-state error and is not overwritten implicitly.
 - `validate_component(component, installed_components)` checks only the selected component's direct manifest relationships against an explicit iterable of installed names. `ComponentValidationError` reports ordered missing dependencies and active conflicts together without installing or resolving anything.
@@ -245,7 +253,7 @@ CLI and orchestration layers depend on lower-level services. Template content mo
 
 ForgePy registers only `PytestComponent` by default. `ComponentRegistry` remains an installation- and resolution-agnostic in-memory catalog: `register(component)` validates its contract, component/metadata identity, and absence of self-references, then stores one `BaseComponent`; `get(name)` returns the registered instance or preserves the standard `KeyError`; and `list_components()` returns an immutable tuple in registration order. Registration does not install components, look up dependencies, evaluate relationships between components, or select installation order.
 
-`ComponentMetadata`, `ComponentManifest`, `ComponentContext`, and `BaseComponent` are independent from `TemplateMetadata`, `TemplateContext`, `BaseTemplate`, and `TemplateRegistry`; neither registry imports or registers objects from the other system. `component list` presents registered metadata. `component add NAME --project PATH` resolves through the registry, creates the validated context, and calls the component's existing installation hook. The component system performs no discovery, persistence, dependency resolution, installation ordering, rollback, uninstall, package installation, template association, or generation integration.
+`ComponentMetadata`, `ComponentManifest`, `ComponentContext`, and `BaseComponent` are independent from `TemplateMetadata`, `TemplateContext`, `BaseTemplate`, and `TemplateRegistry`; neither registry imports or registers objects from the other system. `component list` presents registered metadata without invoking installation. `component add NAME --project PATH` delegates the fixed installation and state-recording sequence to `ComponentInstaller`. The component system performs no discovery, dependency resolution, installation ordering, rollback, uninstall, package installation, template association, or generation integration.
 
 Pre-install relationship validation is an explicit, separate call. The caller supplies the complete set of component names it considers installed; the validator does not discover, load, or persist that state. Validation checks direct declarations only, reports every missing dependency and active conflict for the selected component, performs no registry lookup or filesystem operation, and never invokes `install()`. It does not validate transitive relationships, version constraints, optional dependencies, or installation order.
 
@@ -264,7 +272,23 @@ Pre-install relationship validation is an explicit, separate call. The caller su
 
 `load()` treats a missing file as `frozenset()`. `save(names)` validates non-empty strings, removes duplicates, sorts names for deterministic JSON, creates `.forgepy` when required, flushes a temporary file in the same directory, and atomically replaces the destination. `add(name)` loads before saving so malformed existing data remains untouched; `is_installed(name)` checks the loaded state. Format and I/O failures use ForgePy-specific component-state errors.
 
-The store is not used automatically by `ComponentCommand`, `ComponentRegistry`, validation, or installation. Registered names and installed names remain separate. There is no uninstall, rollback, discovery, project scanning, component version locking, dependency resolution, installation ordering, or transitive traversal.
+The store is not used by `ComponentRegistry`, validation, or concrete installation hooks; only `ComponentInstaller` connects it to an installation sequence, including CLI add operations. Registered names and installed names remain separate. There is no uninstall, rollback, discovery, project scanning, component version locking, dependency resolution, installation ordering, or transitive traversal.
+
+## Component installation orchestration
+
+`ComponentInstaller` connects the independent component contracts for library callers while leaving each dependency responsible for its existing behavior. A default installer creates `ComponentRegistry`; tests and callers may inject a registry. `install(name, project_path)` performs exactly:
+
+1. Resolve `name` through `ComponentRegistry.get()`.
+2. Build `ComponentContext` for the explicit existing project path.
+3. Create `ComponentStateStore` for that project and load installed names.
+4. Raise `ComponentAlreadyInstalledError` if state already contains the component name.
+5. Call `validate_component(component, installed_names)` for direct relationships.
+6. Call `component.install(context)` once.
+7. After hook success, call `state_store.add(component.name)`.
+
+Lookup, context, state-format, relationship-validation, installation-hook, and state-I/O errors propagate without being converted into resolution behavior. Failures through step 6 do not record the requested component. If step 7 fails, installed files may already exist while state remains unchanged; Sprint 9.7 surfaces that partial success and performs no rollback.
+
+The orchestrator does not install dependencies, calculate ordering, traverse graphs, inspect projects, install packages, or implement rollback/uninstall. `ComponentRegistry`, `ComponentStateStore`, `validate_component()`, and concrete components remain unaware of orchestration. `ComponentCommand` delegates add operations to the installer and only maps lookup, context, already-installed, validation, state, target-file, and filesystem failures to friendly output. Handled errors retain ForgePy's existing zero-exit-status behavior.
 
 ## Template system
 
@@ -352,8 +376,11 @@ flowchart LR
     Config -->|show / set / reset| Store[ConfigStore]
     Store --> UserFile[~/.forgepy/config.json]
     Component -->|list| ComponentRegistry[ComponentRegistry]
-    Component -->|add NAME + PATH| ComponentContext[ComponentContext]
-    ComponentContext --> Install[BaseComponent.install]
+    Component -->|add NAME + PATH| Installer[ComponentInstaller]
+    Installer --> ComponentContext[ComponentContext]
+    Installer --> ComponentState[ComponentStateStore]
+    Installer --> ComponentValidation[validate_component]
+    Installer --> Install[BaseComponent.install]
 ```
 
 ### Startup and dispatch
@@ -458,7 +485,7 @@ The current implementation uses Windows executable paths such as `.venv/Scripts/
 - Most subprocess failures propagate; only the initial Git commit has local error handling.
 - The generator writes into an existing project root because it uses `exist_ok=True`.
 - `BaseBuilder` has no behavioral contract, and core builder-style services do not share its inheritance hierarchy.
-- `ComponentRegistry` is in-memory and installation-state-agnostic, with only `pytest` registered by default. Project-local installed state and direct relationship validation are separate explicit facilities and are not invoked by the registry or CLI. Discovery, transitive dependency resolution, installation ordering, package installation, template association, and generation integration remain undefined.
+- `ComponentRegistry` is in-memory and installation-state-agnostic, with only `pytest` registered by default. `ComponentInstaller` coordinates explicit library and CLI add calls without moving behavior into the registry, store, validator, or component. Discovery, transitive dependency resolution, installation ordering, rollback, package installation, template association, and generation integration remain undefined.
 - `config.default_structure.DEFAULT_FILES` is currently unused. `BasicFiles`, `LibraryFiles`, and `CliFiles` own their mappings; `TemplateFiles.basic()` is retained only as a compatibility facade.
 - `CliTemplate` retains per-instance resolved entry-point state. `vscode_entry_point` reports `None` before the generated `cli.py` has been written and is recomputed for each successful `create()` call.
 - The compatibility `TemplateFiles.basic()` facade creates a deliberate template-engine-to-Basic dependency until an explicit compatibility change removes the older API.
