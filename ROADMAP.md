@@ -187,6 +187,20 @@ Sprint 9.5 adds a stateless pre-install check for direct manifest relationships 
 
 Sprint 9.5 does not change ForgePy version `0.6.0`, CLI behavior, project generation, or template output.
 
+## Completed — Sprint 9.6 Project-local Component State
+
+Sprint 9.6 adds isolated persistence for installed ForgePy component names without connecting it automatically to installation or validation.
+
+| Area | Implemented Sprint 9.6 behavior |
+| --- | --- |
+| Location | `<project>/.forgepy/components.json` under an explicitly supplied existing project. |
+| Shape | One deterministic, duplicate-free `installed` array containing non-empty component-name strings. |
+| Operations | Load, save, add one name, and membership check. Missing state is empty. |
+| Safety | Invalid JSON or shape raises a ForgePy component-state error; saves use same-directory temporary files and atomic replacement. |
+| Boundaries | Registry, CLI, validation, and installation remain separate; no uninstall, rollback, discovery, resolution, ordering, scanning, or version locking. |
+
+Sprint 9.6 does not change ForgePy version `0.6.0`, CLI behavior, project generation, or template output.
+
 ## Planned — Stabilization Toward v1.0
 
 These are outcome-oriented priorities, not guaranteed feature commitments.
