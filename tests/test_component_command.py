@@ -71,7 +71,118 @@ class ComponentCommandTests(unittest.TestCase):
 
         self.assertEqual(context.exception.code, 0)
         self.assertIn("list", output.getvalue())
+        self.assertIn("installed", output.getvalue())
         self.assertIn("add", output.getvalue())
+
+    def test_component_installed_help_requires_project_path(self) -> None:
+        output = StringIO()
+
+        with patch(
+            "sys.argv",
+            ["forgepy", "component", "installed", "--help"],
+        ):
+            with redirect_stdout(output):
+                with self.assertRaises(SystemExit) as context:
+                    Parser().parse()
+
+        self.assertEqual(context.exception.code, 0)
+        self.assertIn("--project PATH", output.getvalue())
+
+    def test_component_installed_reports_empty_saved_state(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory)
+            store = ComponentStateStore(project_path)
+            store.save(())
+            original_state = store.state_path.read_bytes()
+
+            output = self._run_cli(
+                "component", "installed", "--project", str(project_path)
+            )
+
+            self.assertEqual(output.strip(), "No installed components.")
+            self.assertEqual(store.state_path.read_bytes(), original_state)
+
+    def test_component_installed_treats_missing_state_as_empty(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory)
+
+            output = self._run_cli(
+                "component", "installed", "--project", str(project_path)
+            )
+
+            self.assertEqual(output.strip(), "No installed components.")
+            self.assertFalse((project_path / ".forgepy").exists())
+
+    def test_component_installed_displays_pytest(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory)
+            ComponentStateStore(project_path).add("pytest")
+
+            output = self._run_cli(
+                "component", "installed", "--project", str(project_path)
+            )
+
+        self.assertEqual(output, "Installed components:\n- pytest\n")
+
+    def test_component_installed_sorts_multiple_names(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory)
+            ComponentStateStore(project_path).save(("zeta", "alpha", "mid"))
+
+            output = self._run_cli(
+                "component", "installed", "--project", str(project_path)
+            )
+
+        self.assertEqual(
+            output,
+            "Installed components:\n- alpha\n- mid\n- zeta\n",
+        )
+
+    def test_component_installed_displays_unregistered_stored_name(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory)
+            ComponentStateStore(project_path).add("retired-component")
+
+            with patch(
+                "cli.commands.component_command.ComponentRegistry"
+            ) as registry:
+                output = self._run_cli(
+                    "component", "installed", "--project", str(project_path)
+                )
+
+        registry.assert_not_called()
+        self.assertIn("- retired-component", output)
+
+    def test_component_installed_reports_malformed_state_without_writing(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory)
+            store = ComponentStateStore(project_path)
+            store.state_directory.mkdir()
+            malformed = b'{"installed": ["broken"]'
+            store.state_path.write_bytes(malformed)
+
+            output = self._run_cli(
+                "component", "installed", "--project", str(project_path)
+            )
+
+            self.assertIn("[ERROR]", output)
+            self.assertIn("malformed JSON", output)
+            self.assertNotIn("Traceback", output)
+            self.assertEqual(store.state_path.read_bytes(), malformed)
+
+    def test_component_installed_rejects_invalid_project_path(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            missing_path = Path(temporary_directory) / "missing"
+
+            output = self._run_cli(
+                "component", "installed", "--project", str(missing_path)
+            )
+
+        self.assertIn("[ERROR] Invalid project path", output)
+        self.assertIn("must exist", output)
+        self.assertNotIn("Traceback", output)
 
     def test_component_list_displays_name_and_description(self) -> None:
         output = self._run_cli("component", "list")

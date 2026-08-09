@@ -64,7 +64,7 @@ The root `README.md`, `requirements.txt`, and `config.py` are currently empty.
 - Subprocess failures generally propagate because commands use `check=True`.
 - Generation uses `exist_ok=True`, so an existing target can be written into rather than rejected.
 - The generated `pyproject.toml` requires Python `>=3.12`, but the ForgePy repository itself does not declare a supported Python range.
-- `ComponentRegistry` is in-memory, installation-state-agnostic, and resolution-agnostic; it registers only `pytest` by default. `ComponentInstaller` coordinates explicit project context, state, direct validation, one hook, and post-success state recording without moving those responsibilities. `component add` now delegates to that installer and adapts errors for CLI output. The component system provides no discovery, transitive resolution, installation ordering, rollback, uninstall, package installation, template association, or generation integration.
+- `ComponentRegistry` is in-memory, installation-state-agnostic, and resolution-agnostic; it registers only `pytest` by default. `ComponentInstaller` coordinates explicit project context, state, direct validation, one hook, and post-success state recording without moving those responsibilities. `component add` delegates to that installer, while `component installed --project PATH` reads the project-local store without registry filtering or filesystem inference. The component system provides no discovery, transitive resolution, installation ordering, rollback, uninstall, package installation, template association, or generation integration.
 - `config.default_structure.DEFAULT_FILES` is defined but unused. `BasicFiles`, `LibraryFiles`, and `CliFiles` own their complete mappings and call `TemplateManager` directly for rendered content; `TemplateFiles.basic()` remains a compatibility facade.
 
 ## Near-term priorities
@@ -87,8 +87,8 @@ Use this section as the handoff point for a new developer or AI session.
 | --- | --- |
 | Stable baseline | `v0.6.0` (`Sprint 6 Stable`) |
 | Current branch policy | Repository policy treats `master` as protected; use a feature branch for implementation |
-| Active development area | Sprint 9.7 component CLI installation delegation |
-| Implemented CLI | `create`, `list`, `version`, `config show/set/reset`, `component list/add`, plus no-command interactive create |
+| Active development area | Sprint 9.8 installed-component state presentation |
+| Implemented CLI | `create`, `list`, `version`, `config show/set/reset`, `component list/installed/add`, plus no-command interactive create |
 | Implemented templates | `basic`, `library`, and `cli`, all with descriptive metadata |
 | Component state | Registry with one `pytest` built-in, project-local installed names, direct validation, and shared library/CLI orchestration; no generation integration |
 | Version source | `config/version.py`, aligned with the `v0.6.0` release tag |

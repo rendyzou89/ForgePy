@@ -221,6 +221,12 @@ Sprint 9.7 keeps ForgePy version `0.6.0`, CLI syntax, project generation, and te
 
 The integration preserves existing handled-error exit status behavior and adds no rollback, resolution, ordering, discovery, package installation, or generation integration. A state-recording failure after hook success remains a surfaced partial-success condition.
 
+## Completed — Sprint 9.8 Installed Component State CLI
+
+`component installed --project PATH` reads the existing project-local component state and presents stored names in deterministic order. A missing state file reports `No installed components.`; malformed state produces a friendly error and remains unchanged. Stored names remain visible even when they are not registered because catalog membership and installed state are distinct.
+
+This read-only action adds no discovery, filesystem scanning, state migration, resolver, planning, rollback, uninstall, or project model. `component list` remains the registered catalog, and `component add` retains its `ComponentInstaller` flow.
+
 ## Planned — Stabilization Toward v1.0
 
 These are outcome-oriented priorities, not guaranteed feature commitments.
