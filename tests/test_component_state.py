@@ -150,7 +150,7 @@ class ComponentStateStoreTests(unittest.TestCase):
 
         self.assertEqual(
             tuple(component.name for component in registry.list_components()),
-            ("pytest",),
+            ("pytest", "ruff"),
         )
         with self.assertRaises(KeyError):
             registry.get("external")

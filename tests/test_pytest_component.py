@@ -28,18 +28,18 @@ class PytestComponentTests(unittest.TestCase):
         self.assertEqual(manifest.dependencies, ())
         self.assertEqual(manifest.conflicts, ())
 
-    def test_default_registry_registers_pytest_deterministically(self) -> None:
+    def test_default_registry_registers_pytest_first_deterministically(self) -> None:
         first_registry = ComponentRegistry()
         second_registry = ComponentRegistry()
 
         self.assertIsInstance(first_registry.get("pytest"), PytestComponent)
         self.assertEqual(
             tuple(component.name for component in first_registry.list_components()),
-            ("pytest",),
+            ("pytest", "ruff"),
         )
         self.assertEqual(
             tuple(component.name for component in second_registry.list_components()),
-            ("pytest",),
+            ("pytest", "ruff"),
         )
 
     def test_install_creates_the_declared_configuration(self) -> None:

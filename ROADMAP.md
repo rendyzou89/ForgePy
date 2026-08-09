@@ -227,6 +227,12 @@ The integration preserves existing handled-error exit status behavior and adds n
 
 This read-only action adds no discovery, filesystem scanning, state migration, resolver, planning, rollback, uninstall, or project model. `component list` remains the registered catalog, and `component add` retains its `ComponentInstaller` flow.
 
+## Completed — Sprint 9.9 Built-in Ruff Component
+
+Sprint 9.9 adds `RuffComponent` as the second built-in, registered deterministically after `pytest`. Its manifest owns only `ruff.toml`; installation exclusively creates a small deterministic Ruff configuration and refuses an existing target without modification.
+
+The component uses the existing installer, state store, relationship validator, and CLI flows unchanged. It does not edit `pyproject.toml`, install Ruff, invoke package tools, or add dependencies/conflicts, resolution, rollback, or special CLI handling.
+
 ## Planned — Stabilization Toward v1.0
 
 These are outcome-oriented priorities, not guaranteed feature commitments.

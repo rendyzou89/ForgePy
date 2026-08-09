@@ -193,6 +193,36 @@ class ComponentCommandTests(unittest.TestCase):
             "Pytest configuration for an existing Python project.",
             output,
         )
+        self.assertIn("ruff", output)
+        self.assertIn(
+            "Ruff configuration for an existing Python project.",
+            output,
+        )
+
+    def test_component_add_and_installed_support_ruff(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory)
+
+            add_output = self._run_cli(
+                "component",
+                "add",
+                "ruff",
+                "--project",
+                str(project_path),
+            )
+            installed_output = self._run_cli(
+                "component",
+                "installed",
+                "--project",
+                str(project_path),
+            )
+
+            self.assertIn("[OK] Component 'ruff' added", add_output)
+            self.assertEqual(
+                (project_path / "ruff.toml").read_text(encoding="utf-8"),
+                'line-length = 88\ntarget-version = "py312"\n',
+            )
+            self.assertEqual(installed_output, "Installed components:\n- ruff\n")
 
     def test_component_add_installs_pytest_into_project(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
