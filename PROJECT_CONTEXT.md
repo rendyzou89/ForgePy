@@ -69,7 +69,7 @@ The root `README.md`, `requirements.txt`, and `config.py` are currently empty.
 
 ## Near-term priorities
 
-- Finish and verify the Sprint 9.7 CLI-to-installer delegation without adding rollback or resolution.
+- Keep the merged Sprint 9.9 component catalog and CLI flows stable without adding rollback or resolution.
 - Keep further templates beyond `basic`, `library`, and `cli` subject to separate approval and compatibility review.
 - Keep persisted `author` and `license` values, and the configuration store itself, out of core generation and templates until a separate requirement explicitly defines that integration.
 - Continue expanding automated coverage across supported commands, lifecycle stages, and failure handling.
