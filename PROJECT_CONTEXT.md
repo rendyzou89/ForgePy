@@ -6,7 +6,7 @@
 - **Purpose:** generate a structured starter Python project from a CLI, then prepare its virtual environment, dependencies, Git repository, and VS Code configuration.
 - **Protected stable branch policy:** treat `master` as protected and stable
 - **Current stable release/tag:** `v0.6.0` (`Sprint 6 Stable`)
-- **Current development area:** Sprint 9.5, adding stateless direct component relationship validation.
+- **Current development area:** Sprint 9.6, adding minimal project-local installed-component state.
 
 `config/version.py` is the canonical ForgePy version source and reports `0.6.0`, matching the `v0.6.0` stable release tag. No release tag newer than `v0.6.0` exists.
 
@@ -64,12 +64,12 @@ The root `README.md`, `requirements.txt`, and `config.py` are currently empty.
 - Subprocess failures generally propagate because commands use `check=True`.
 - Generation uses `exist_ok=True`, so an existing target can be written into rather than rejected.
 - The generated `pyproject.toml` requires Python `>=3.12`, but the ForgePy repository itself does not declare a supported Python range.
-- `ComponentRegistry` is in-memory, installation-agnostic, and resolution-agnostic; it registers only `pytest` by default. A separate stateless validator checks direct dependencies and conflicts against installed names supplied explicitly by its caller. The component system provides no discovery, persistence, transitive resolution, installation ordering, rollback, uninstall, package installation, template association, or generation integration.
+- `ComponentRegistry` is in-memory, installation-state-agnostic, and resolution-agnostic; it registers only `pytest` by default. Project-local installed names may be persisted separately at `.forgepy/components.json`, and a stateless validator checks direct relationships against names supplied explicitly by its caller. Neither facility is connected automatically to the CLI or registry. The component system provides no discovery, transitive resolution, installation ordering, rollback, uninstall, package installation, template association, or generation integration.
 - `config.default_structure.DEFAULT_FILES` is defined but unused. `BasicFiles`, `LibraryFiles`, and `CliFiles` own their complete mappings and call `TemplateManager` directly for rendered content; `TemplateFiles.basic()` remains a compatibility facade.
 
 ## Near-term priorities
 
-- Finish and verify the Sprint 9.5 direct component validator without adding installed-state persistence or resolution.
+- Finish and verify the Sprint 9.6 project-local component state store without adding automatic CLI integration or resolution.
 - Keep further templates beyond `basic`, `library`, and `cli` subject to separate approval and compatibility review.
 - Keep persisted `author` and `license` values, and the configuration store itself, out of core generation and templates until a separate requirement explicitly defines that integration.
 - Continue expanding automated coverage across supported commands, lifecycle stages, and failure handling.
@@ -87,12 +87,12 @@ Use this section as the handoff point for a new developer or AI session.
 | --- | --- |
 | Stable baseline | `v0.6.0` (`Sprint 6 Stable`) |
 | Current branch policy | Repository policy treats `master` as protected; use a feature branch for implementation |
-| Active development area | Sprint 9.5 component relationship validation |
+| Active development area | Sprint 9.6 project-local component state |
 | Implemented CLI | `create`, `list`, `version`, `config show/set/reset`, `component list/add`, plus no-command interactive create |
 | Implemented templates | `basic`, `library`, and `cli`, all with descriptive metadata |
-| Component state | Registry with one `pytest` built-in, explicit CLI list/add, and stateless direct validation against caller-supplied installed names; no generation integration |
+| Component state | Registry with one `pytest` built-in, isolated project-local installed-name persistence, explicit CLI list/add, and stateless direct validation; no automatic connection or generation integration |
 | Version source | `config/version.py`, aligned with the `v0.6.0` release tag |
-| Verification state | `unittest` covers component validation, component and template metadata/registries, configuration, create precedence, list output, template architecture and output snapshots, all structures, CLI execution, and isolated template-aware VS Code generation; the real external lifecycle remains a manual check |
+| Verification state | `unittest` covers component state and validation, component and template metadata/registries, configuration, create precedence, list output, template architecture and output snapshots, all structures, CLI execution, and isolated template-aware VS Code generation; the real external lifecycle remains a manual check |
 
 To resume work:
 
