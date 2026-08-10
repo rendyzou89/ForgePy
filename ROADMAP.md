@@ -275,6 +275,12 @@ Sprint 11.6 establishes the minimal CLI process contract: `0` for success, `1` f
 
 Library exception contracts remain at their owning boundaries, unexpected programming errors still surface, and no global exception hierarchy or error-management framework was added.
 
+### Sprint 11.7 — Generated-file lifecycle ordering
+
+Sprint 11.7 moves VS Code generation before Git initialization, staging, and the initial commit. All ForgePy-owned template and editor files therefore exist before `git add .`; a VS Code failure prevents Git from running, while a commit failure propagates before full-success reporting.
+
+Git and VS Code responsibilities remain separate, and partial projects remain possible because no rollback or transaction framework was added.
+
 ## Planned — Stabilization Toward v1.0
 
 These are outcome-oriented priorities, not guaranteed feature commitments.

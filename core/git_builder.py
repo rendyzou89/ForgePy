@@ -65,5 +65,6 @@ class GitBuilder:
                 "[WARNING] Initial Commit gagal.\n"
                 "Pastikan Git user.name dan user.email sudah dikonfigurasi."
             )
+            raise
 
         print("[OK] Git Repository berhasil dibuat.")
