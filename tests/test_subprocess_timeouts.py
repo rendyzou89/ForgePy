@@ -205,6 +205,31 @@ class LifecycleSubprocessTimeoutTests(unittest.TestCase):
 
 class CliTimeoutTranslationTests(unittest.TestCase):
 
+    def test_create_command_translates_missing_git_to_status_one(self) -> None:
+        failure = FileNotFoundError(
+            "Git executable is required but was not found."
+        )
+        output = StringIO()
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            with patch(
+                "cli.commands.create_command.ProjectGenerator.create",
+                side_effect=failure,
+            ):
+                with redirect_stdout(output):
+                    status = CreateCommand().execute(
+                        Namespace(
+                            project_name="MissingGit",
+                            location=temporary_directory,
+                            template="basic",
+                        )
+                    )
+
+        self.assertEqual(status, 1)
+        self.assertIn("[ERROR] Project creation failed", output.getvalue())
+        self.assertIn("Git executable is required", output.getvalue())
+        self.assertNotIn("Traceback", output.getvalue())
+
     def test_create_command_translates_timeout_to_status_one(self) -> None:
         failure = subprocess.TimeoutExpired("venv", 300)
         output = StringIO()
