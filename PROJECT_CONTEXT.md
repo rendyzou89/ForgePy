@@ -6,7 +6,7 @@
 - **Purpose:** generate a structured starter Python project from a CLI, then prepare its virtual environment, dependencies, Git repository, and VS Code configuration.
 - **Protected stable branch policy:** treat `master` as protected and stable
 - **Current stable release/tag:** `v0.6.0` (`Sprint 6 Stable`)
-- **Current development area:** Sprint 12.1, adding standard Python packaging and the installed `forgepy` command.
+- **Current development area:** Sprint 12.2, defining the Windows and CPython support contract for v1.0 validation.
 
 `config/version.py` is the canonical ForgePy version source and reports `0.6.0`, matching the `v0.6.0` stable release tag. No release tag newer than `v0.6.0` exists.
 
@@ -66,13 +66,14 @@ The root `README.md` and `requirements.txt` are currently empty.
 
 ## Technical constraints
 
-- Full generation is Windows-oriented: environment tools are addressed under `.venv/Scripts` with `.exe` filenames.
+- ForgePy v1.0 officially supports Windows 10 and Windows 11 on CPython. Other operating systems are not officially supported in v1.0. The supported range is CPython 3.12+ without an upper bound; 3.12, 3.13, and 3.14 are the required v1.0 validation targets. Linux, macOS, and alternative Python implementations remain unsupported and unverified.
+- Full generation uses Windows-specific assumptions: environment tools are addressed under `.venv/Scripts` with `.exe` filenames, project names follow Windows path and reserved-name semantics, and generated VS Code configuration uses Windows virtual-environment paths. No runtime platform guard is present or required for this support-policy stage.
 - ForgePy itself has no declared third-party runtime dependencies. Automated coverage includes configuration, create-input resolution, metadata/registry behavior, list output, the shared template contract, exact normalized output snapshots, all built-in structures, generated CLI execution, and isolated template-aware VS Code generation through `ProjectGenerator`. The generated `basic` project requires `PySide6`, `pandas`, and `openpyxl`; `library` and `cli` have empty requirements files. The full lifecycle still upgrades packaging tools and may require network access.
 - Template lookup uses direct dictionary indexing and retains `KeyError` for an unknown name, but now occurs after destination validation and before project-root creation so rejection leaves no generation artifact.
 - Template metadata versioning has no release policy yet. The `basic` metadata records `0.6.0`, while `library` and `cli` start at `0.1.0`; these are independent from the ForgePy application and generated-project versions.
 - Subprocess failures generally propagate because commands use `check=True`.
 - Project generation rejects names that are unsafe for current generated Python/TOML strings or the supported Windows filename contract, including leading ASCII spaces and ordinary or superscript-digit reserved device stems, as well as existing targets, before template lookup or root creation. Accepted display names are preserved, while library and CLI package names remain separately normalized and preflighted after lookup but before root creation. Friendly CLI translation remains separate work.
-- The generated `pyproject.toml` requires Python `>=3.12`, but the ForgePy repository itself does not declare a supported Python range.
+- The root packaging metadata requires CPython `>=3.12` and advertises Python 3.12, 3.13, and 3.14 on Windows. Local validation on one interpreter does not replace the required matrix validation.
 - `ComponentRegistry` is in-memory, installation-state-agnostic, and resolution-agnostic; it registers `pytest`, `ruff`, then `github-actions` by default. `ComponentInstaller` coordinates explicit project context, state, direct validation, one hook, and post-success state recording without moving those responsibilities. `component add` delegates to that installer, while `component installed --project PATH` reads the project-local store without registry filtering or filesystem inference. The component system provides no discovery, transitive resolution, installation ordering, rollback, uninstall, local package installation, template association, or generation integration.
 - `config.default_structure.DEFAULT_FILES` is defined but unused. `BasicFiles`, `LibraryFiles`, and `CliFiles` own their complete mappings and call `TemplateManager` directly for rendered content; `TemplateFiles.basic()` remains a compatibility facade.
 
@@ -82,7 +83,7 @@ The root `README.md` and `requirements.txt` are currently empty.
 - Keep further templates beyond `basic`, `library`, and `cli` subject to separate approval and compatibility review.
 - Keep persisted `author` and `license` values, and the configuration store itself, out of core generation and templates until a separate requirement explicitly defines that integration.
 - Continue expanding automated coverage across supported commands, lifecycle stages, and failure handling.
-- Document platform and Python support based on verified behavior.
+- Validate the declared support contract on `windows-latest` with CPython 3.12, 3.13, and 3.14 before making the v1.0 claim release-final. Every matrix job must run the full unit suite, `compileall`, and packaging/support tests. The Python 3.12 job must also build and inspect the wheel and sdist, install the wheel in isolation, smoke-test the installed CLI and version, and verify that tests and `utils` remain absent from the artifacts.
 
 ## Long-term v1.0 direction
 

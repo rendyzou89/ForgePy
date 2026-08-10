@@ -299,6 +299,12 @@ Sprint 12.1 adds a setuptools-backed root `pyproject.toml`, constrained runtime-
 
 Packaging excludes tests and repository-only utilities, requires no non-Python package data, and introduces no CLI duplication, source-layout migration, plugin discovery, or release framework. Repository licensing, the final README, and release artifact validation remain separate release-readiness work.
 
+## Completed — Sprint 12.2 Support Contract
+
+Sprint 12.2 defines the v1.0 support target as Windows 10/11 on CPython 3.12+ and records Python 3.12, 3.13, and 3.14 as the required validation matrix. Packaging metadata advertises only CPython and Windows support; Linux, macOS, and alternative Python implementations remain unsupported and unverified.
+
+The existing Windows-specific environment paths, destination-name rules, and generated VS Code paths remain unchanged. No runtime platform guard or portability abstraction was added. The contract is ready for real `windows-latest` interpreter-matrix validation in Sprint 12.3, so local results on one interpreter do not make the support claim release-final.
+
 ## Planned — Stabilization Toward v1.0
 
 These are outcome-oriented priorities, not guaranteed feature commitments.
@@ -316,7 +322,7 @@ These are outcome-oriented priorities, not guaranteed feature commitments.
 
 ### Compatibility and Support
 
-- Document supported Python and operating-system ranges based on verified behavior.
+- Validate the documented Windows and CPython support contract on `windows-latest` with Python 3.12, 3.13, and 3.14.
 - Stabilize the CLI contract, all three built-in template names and outputs, and the project-generation lifecycle.
 - Define a template-metadata version policy before independently evolving template revisions.
 - Provide migration notes for any intentionally incompatible pre-1.0 change.
