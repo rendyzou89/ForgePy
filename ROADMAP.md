@@ -305,11 +305,11 @@ Sprint 12.2 defines the v1.0 support target as Windows 10/11 on CPython 3.12+ an
 
 The existing Windows-specific environment paths, destination-name rules, and generated VS Code paths remain unchanged. No runtime platform guard or portability abstraction was added. The contract is ready for real `windows-latest` interpreter-matrix validation in Sprint 12.3, so local results on one interpreter do not make the support claim release-final.
 
-## In progress — Sprint 12.3 Repository CI
+## Completed — Sprint 12.3 Repository CI
 
 Sprint 12.3 adds ForgePy's repository-level GitHub Actions workflow on `windows-latest` for CPython 3.12, 3.13, and 3.14. Every matrix entry runs the full unit suite, `compileall`, and focused packaging/support tests. The Python 3.12 entry also builds and inspects the wheel and sdist, installs the wheel in isolation, and exercises the installed CLI from outside the checkout.
 
-This repository workflow is separate from the minimal built-in `github-actions` component generated into user projects. The implementation and local contract tests do not establish matrix success: actual GitHub runs must pass before support becomes release-final. GitHub's hosted Windows runner validates runner compatibility rather than literally proving both Windows 10 and Windows 11 client editions.
+This repository workflow is separate from the minimal built-in `github-actions` component generated into user projects. The CPython 3.12, 3.13, and 3.14 jobs pass, including Python 3.12 artifact and installed-CLI validation. GitHub's hosted Windows runner validates runner compatibility rather than literally proving both Windows 10 and Windows 11 client editions.
 
 ## Planned — Stabilization Toward v1.0
 
@@ -318,7 +318,7 @@ These are outcome-oriented priorities, not guaranteed feature commitments.
 ### Repository Consistency
 
 - Keep the canonical application version synchronized with release tags without duplicating it in module headers.
-- Populate or intentionally resolve the empty root README and project metadata.
+- Keep the public README and project metadata aligned with validated behavior.
 
 ### Verification and Failure Behavior
 
@@ -328,7 +328,7 @@ These are outcome-oriented priorities, not guaranteed feature commitments.
 
 ### Compatibility and Support
 
-- Observe successful repository CI runs on `windows-latest` with Python 3.12, 3.13, and 3.14 before finalizing the support claim.
+- Keep repository CI green on `windows-latest` with Python 3.12, 3.13, and 3.14.
 - Stabilize the CLI contract, all three built-in template names and outputs, and the project-generation lifecycle.
 - Define a template-metadata version policy before independently evolving template revisions.
 - Provide migration notes for any intentionally incompatible pre-1.0 change.

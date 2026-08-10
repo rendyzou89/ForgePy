@@ -26,14 +26,14 @@ forgepy --help
 The editable install uses the root `pyproject.toml`, exposes the existing
 `main:main` application path as `forgepy`, and reads distribution version
 metadata from `config/version.py`. ForgePy declares no third-party Python
-runtime dependencies. Repository licensing and the final user README remain
-separate release-readiness decisions.
+runtime dependencies. Repository licensing remains a separate
+release-readiness decision.
 
 The implementation and generated VS Code configuration currently assume Windows-style virtual-environment paths.
 
 Repository CI is defined in `.github/workflows/ci.yml` and targets `windows-latest` with CPython 3.12, 3.13, and 3.14. Every matrix entry runs the full unit suite, `compileall`, and packaging/support tests. The Python 3.12 job also builds and inspects the wheel and sdist, installs the wheel in an isolated environment, runs the installed `forgepy --help`, `forgepy version`, `forgepy list`, and `forgepy component list` commands from outside the checkout, verifies the expected ForgePy version, and verifies that tests and `utils` remain absent from the distribution artifacts.
 
-The support claim becomes release-final only after all real GitHub matrix jobs pass. Adding or locally reviewing the workflow does not prove those runs succeeded. The hosted `windows-latest` runner validates Windows runner compatibility but does not literally prove both Windows 10 and Windows 11 client editions; native client smoke validation may remain a release-stage manual check. This repository workflow is intentionally richer than the independent `github-actions` component generated into user projects.
+The CPython 3.12, 3.13, and 3.14 matrix currently passes and must remain green as the project approaches v1.0. The hosted `windows-latest` runner validates Windows runner compatibility but does not literally prove both Windows 10 and Windows 11 client editions; native client smoke validation may remain a release-stage manual check. This repository workflow is intentionally richer than the independent `github-actions` component generated into user projects.
 
 ## Coding style
 

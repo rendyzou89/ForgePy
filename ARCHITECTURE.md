@@ -39,7 +39,7 @@ ForgePy/
 |-- utils/                    Reserved utility package; logger is currently empty
 |-- main.py                   Application entry point
 |-- pyproject.toml            Setuptools build and distribution metadata
-|-- README.md                 Project README; currently empty
+|-- README.md                 Public installation and usage guide
 |-- AGENTS.md                 Working rules for human and AI agents
 |-- ARCHITECTURE.md           Current structure and dependency flows
 |-- CONTRIBUTING.md           Contribution and review workflow
@@ -519,11 +519,11 @@ ForgePy v1.0 officially supports Windows 10 and Windows 11 on CPython. Other ope
 
 The current implementation uses Windows executable paths such as `.venv/Scripts/python.exe` and `.venv/Scripts/pip.exe`, Windows destination-name semantics, and Windows-specific virtual-environment paths in generated VS Code configuration. This explicit support contract does not add a runtime platform guard: metadata and documentation describe the supported environment, while non-Windows execution remains outside the v1.0 contract.
 
-Repository CI is defined separately in `.github/workflows/ci.yml`. It targets `windows-latest` with CPython 3.12, 3.13, and 3.14; every matrix entry runs the full unit suite, `compileall`, and the focused packaging/support tests. The Python 3.12 entry additionally builds and inspects the wheel and sdist, installs the wheel in an isolated runner environment, and exercises the installed CLI from outside the checkout. The richer repository workflow does not change the minimal `github-actions` component generated into user projects.
+Repository CI is defined separately in `.github/workflows/ci.yml`. Its passing `windows-latest` matrix covers CPython 3.12, 3.13, and 3.14; every matrix entry runs the full unit suite, `compileall`, and the focused packaging/support tests. The Python 3.12 entry additionally builds and inspects the wheel and sdist, installs the wheel in an isolated runner environment, and exercises the installed CLI from outside the checkout. The richer repository workflow does not change the minimal `github-actions` component generated into user projects.
 
 ## Known limitations and technical debt
 
-- The full generation lifecycle is supported only on Windows 10 and Windows 11 and assumes Windows `.venv/Scripts/*.exe` paths. The repository workflow expresses the Python 3.12-3.14 matrix, but the support claim still requires successful GitHub runs before release.
+- The full generation lifecycle is supported only on Windows 10 and Windows 11 and assumes Windows `.venv/Scripts/*.exe` paths. The repository's Python 3.12-3.14 GitHub matrix currently passes; native client smoke validation remains distinct.
 - GitHub's `windows-latest` runner validates Windows runner compatibility; it does not literally validate both Windows 10 and Windows 11 client editions. Native client smoke validation may remain a release-stage manual check.
 - Automated coverage includes component metadata and registry behavior, user configuration, create-input resolution, project-name and destination safety, template metadata and registry behavior, list output, shared template contracts, exact normalized template-owned file snapshots, all built-in structures, generated CLI subprocess behavior, template-aware VS Code behavior, and isolated selection through `ProjectGenerator`; the real external lifecycle and other application areas remain uncovered.
 - `author` and `license` are persisted but not applied to generated content.
@@ -535,7 +535,7 @@ Repository CI is defined separately in `.github/workflows/ci.yml`. It targets `w
 - `config.default_structure.DEFAULT_FILES` is currently unused. `BasicFiles`, `LibraryFiles`, and `CliFiles` own their mappings; `TemplateFiles.basic()` is retained only as a compatibility facade.
 - `CliTemplate` retains per-instance resolved entry-point state. `vscode_entry_point` reports `None` before the generated `cli.py` has been written and is recomputed for each successful `create()` call.
 - The compatibility `TemplateFiles.basic()` facade creates a deliberate template-engine-to-Basic dependency until an explicit compatibility change removes the older API.
-- The root README, requirements file, and reserved utility logger are empty.
+- The root requirements file and reserved utility logger are empty.
 
 ## Safe extension rules
 
