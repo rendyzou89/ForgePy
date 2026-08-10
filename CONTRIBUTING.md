@@ -19,8 +19,15 @@ git clone <repository-url>
 cd ForgePy
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python main.py --help
+python -m pip install -e .
+forgepy --help
 ```
+
+The editable install uses the root `pyproject.toml`, exposes the existing
+`main:main` application path as `forgepy`, and reads distribution version
+metadata from `config/version.py`. ForgePy declares no third-party Python
+runtime dependencies. Repository licensing and the final user README remain
+separate release-readiness decisions.
 
 The implementation and generated VS Code configuration currently assume Windows-style virtual-environment paths.
 

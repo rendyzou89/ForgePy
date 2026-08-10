@@ -6,7 +6,7 @@
 - **Purpose:** generate a structured starter Python project from a CLI, then prepare its virtual environment, dependencies, Git repository, and VS Code configuration.
 - **Protected stable branch policy:** treat `master` as protected and stable
 - **Current stable release/tag:** `v0.6.0` (`Sprint 6 Stable`)
-- **Current development area:** Sprint 10.0, adding minimal GitHub Actions CI through the existing component architecture.
+- **Current development area:** Sprint 12.1, adding standard Python packaging and the installed `forgepy` command.
 
 `config/version.py` is the canonical ForgePy version source and reports `0.6.0`, matching the `v0.6.0` stable release tag. No release tag newer than `v0.6.0` exists.
 
@@ -16,6 +16,7 @@ ForgePy favors understandable automation, explicit architectural boundaries, com
 
 ## Implemented capabilities
 
+- Install ForgePy through standards-based setuptools metadata and expose the existing `main:main` CLI flow as the `forgepy` console command.
 - Parse and dispatch `create`, `list`, `version`, and `config` commands through one shared catalog.
 - Fall back to an interactive create workflow when no command is supplied.
 - Register the `basic`, `library`, and `cli` project templates through one validated registration path with immutable metadata.
@@ -61,7 +62,7 @@ A successful `create` includes successful Git initialization, staging, and initi
 | `tests/` | Standard-library tests for component and template metadata/registries, configuration, create resolution, list output, template architecture and output snapshots, built-in structures, and VS Code compatibility. |
 | `main.py` | Executable application entry point. |
 
-The root `README.md`, `requirements.txt`, and `config.py` are currently empty.
+The root `README.md` and `requirements.txt` are currently empty.
 
 ## Technical constraints
 

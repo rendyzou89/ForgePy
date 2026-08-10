@@ -16,6 +16,10 @@ venv/
 # Build
 build/
 dist/
+*.egg-info/
+
+# ForgePy project state
+.forgepy/
 
 # OS
 .DS_Store

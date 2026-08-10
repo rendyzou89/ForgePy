@@ -37,7 +37,7 @@ ForgePy/
 |   `-- vscode/               VS Code JSON content generators
 |-- utils/                    Reserved utility package; logger is currently empty
 |-- main.py                   Application entry point
-|-- config.py                 Empty root module
+|-- pyproject.toml            Setuptools build and distribution metadata
 |-- README.md                 Project README; currently empty
 |-- AGENTS.md                 Working rules for human and AI agents
 |-- ARCHITECTURE.md           Current structure and dependency flows
@@ -118,6 +118,12 @@ ForgePy/
 `config/version.py` is the canonical source for the ForgePy application version. `VersionCommand` imports `APP_NAME` and `VERSION` from that module and adds the conventional `v` prefix only when displaying the release. Module docstrings do not duplicate release numbers.
 
 Versions rendered into generated projects, template metadata versions, and version fields required by VS Code JSON schemas are independent of the ForgePy release version. The `basic` metadata records `0.6.0`, while `library` and `cli` start at `0.1.0` as independent template revisions; this does not make `config/version.py` a template-version source.
+
+The root `pyproject.toml` uses setuptools to discover only the runtime package
+families and exposes `forgepy = main:main` as the installed console command.
+Its distribution version is read dynamically from `config.version.VERSION`,
+and it declares no third-party Python runtime dependencies or non-Python
+package data.
 
 ## User Configuration
 
@@ -521,7 +527,7 @@ The current implementation uses Windows executable paths such as `.venv/Scripts/
 - `config.default_structure.DEFAULT_FILES` is currently unused. `BasicFiles`, `LibraryFiles`, and `CliFiles` own their mappings; `TemplateFiles.basic()` is retained only as a compatibility facade.
 - `CliTemplate` retains per-instance resolved entry-point state. `vscode_entry_point` reports `None` before the generated `cli.py` has been written and is recomputed for each successful `create()` call.
 - The compatibility `TemplateFiles.basic()` facade creates a deliberate template-engine-to-Basic dependency until an explicit compatibility change removes the older API.
-- The root README, requirements file, root `config.py`, and utility logger are empty.
+- The root README, requirements file, and reserved utility logger are empty.
 
 ## Safe extension rules
 
