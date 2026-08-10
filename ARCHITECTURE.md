@@ -42,6 +42,7 @@ ForgePy/
 |-- README.md                 Public installation and usage guide
 |-- AGENTS.md                 Working rules for human and AI agents
 |-- ARCHITECTURE.md           Current structure and dependency flows
+|-- CHANGELOG.md              Release-facing Unreleased and tagged history
 |-- CONTRIBUTING.md           Contribution and review workflow
 |-- ENGINEERING_PRINCIPLES.md Engineering policy and completion criteria
 |-- PROJECT_CONTEXT.md        Current development and handoff context
@@ -125,8 +126,12 @@ Versions rendered into generated projects, template metadata versions, and versi
 The root `pyproject.toml` uses setuptools to discover only the runtime package
 families and exposes `forgepy = main:main` as the installed console command.
 Its distribution version is read dynamically from `config.version.VERSION`,
-and it declares no third-party Python runtime dependencies or non-Python
-package data.
+its Markdown long description comes from `README.md`, and its verified project
+URLs point to the ForgePy GitHub repository and issue tracker. It declares no
+third-party Python runtime dependencies or non-Python package data. Release
+metadata classifies the current development line as Beta; repository licensing
+uses the SPDX expression `MIT` and includes the root `LICENSE` file through
+PEP 639 metadata. No legacy license classifier is used.
 
 ## User Configuration
 

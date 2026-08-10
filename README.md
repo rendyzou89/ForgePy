@@ -134,3 +134,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for repository workflow and review expect
 ## Current Status
 
 ForgePy is currently version 0.6.0 and is being prepared toward v1.0.
+
+## License
+
+ForgePy is licensed under the [MIT License](LICENSE).

@@ -26,8 +26,13 @@ forgepy --help
 The editable install uses the root `pyproject.toml`, exposes the existing
 `main:main` application path as `forgepy`, and reads distribution version
 metadata from `config/version.py`. ForgePy declares no third-party Python
-runtime dependencies. Repository licensing remains a separate
-release-readiness decision.
+runtime dependencies and is licensed under the root MIT License.
+
+Release-facing metadata uses `README.md` as the distribution long description,
+and `CHANGELOG.md` records Unreleased work plus only formally tagged history.
+Package license metadata uses the SPDX expression `MIT` and distributes the
+root `LICENSE` file. This does not introduce a CLA, copyright assignment, DCO,
+or other contributor-licensing process.
 
 The implementation and generated VS Code configuration currently assume Windows-style virtual-environment paths.
 

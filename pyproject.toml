@@ -1,17 +1,22 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77.0.3"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "forgepy"
 dynamic = ["version"]
 description = "Create structured Python projects and prepare their development tooling."
+readme = { file = "README.md", content-type = "text/markdown" }
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.12"
 dependencies = []
 authors = [
     { name = "Rendy Zou" },
 ]
+keywords = ["python", "project-generator", "cli", "windows"]
 classifiers = [
+    "Development Status :: 4 - Beta",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.12",
@@ -20,6 +25,11 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: CPython",
     "Operating System :: Microsoft :: Windows",
 ]
+
+[project.urls]
+Homepage = "https://github.com/rendyzou89/ForgePy"
+Repository = "https://github.com/rendyzou89/ForgePy"
+Issues = "https://github.com/rendyzou89/ForgePy/issues"
 
 [project.scripts]
 forgepy = "main:main"
