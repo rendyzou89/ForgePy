@@ -8,6 +8,7 @@ ForgePy is a layered command-line application. The CLI parses user input and sel
 
 ```text
 ForgePy/
+|-- .github/workflows/ci.yml Repository Windows/CPython validation workflow
 |-- builders/                 Reusable file-system and Python-tool builders
 |-- cli/                      Argument parsing, dispatch, and command objects
 |   `-- commands/             Implementations and the shared command catalog
@@ -53,6 +54,7 @@ ForgePy/
 
 | Area | Responsibility |
 | --- | --- |
+| `.github/workflows/ci.yml` | Runs ForgePy's repository test matrix and Python 3.12 distribution validation; it is separate from generated component output. |
 | `main.py` | Connects `Parser` to `Dispatcher`. |
 | `cli/parser.py` | Defines CLI syntax, defaults, and subcommands. |
 | `cli/command.py` | Defines command metadata, parser configuration, and execution contracts. |
@@ -102,6 +104,7 @@ ForgePy/
 | `tests/test_component_state.py` | Verifies isolated project-local state loading, validation, deterministic atomic persistence, and registry independence. |
 | `tests/test_component_validation.py` | Verifies direct dependency/conflict checks, aggregated failures, registry isolation, and validation without writes or installation. |
 | `tests/test_github_actions_component.py` | Verifies GitHub Actions metadata, manifest, registration order, nested workflow creation, installer integration, isolation, and existing-target behavior. |
+| `tests/test_repository_ci.py` | Verifies repository CI triggers, Windows/CPython matrix, validation commands, artifact inspection, wheel installation, and installed CLI probes without parsing a full YAML snapshot. |
 | `tests/test_pytest_component.py` | Verifies pytest metadata, manifest, deterministic registration, isolated installation, and existing-target behavior. |
 | `tests/test_ruff_component.py` | Verifies Ruff metadata, manifest, deterministic registration, isolated installation, installer integration, and existing-target behavior. |
 | `tests/test_config_command.py` | Verifies configuration parsing, dispatch, output, persistence, reset, and error handling with an isolated home. |
@@ -516,9 +519,12 @@ ForgePy v1.0 officially supports Windows 10 and Windows 11 on CPython. Other ope
 
 The current implementation uses Windows executable paths such as `.venv/Scripts/python.exe` and `.venv/Scripts/pip.exe`, Windows destination-name semantics, and Windows-specific virtual-environment paths in generated VS Code configuration. This explicit support contract does not add a runtime platform guard: metadata and documentation describe the supported environment, while non-Windows execution remains outside the v1.0 contract.
 
+Repository CI is defined separately in `.github/workflows/ci.yml`. It targets `windows-latest` with CPython 3.12, 3.13, and 3.14; every matrix entry runs the full unit suite, `compileall`, and the focused packaging/support tests. The Python 3.12 entry additionally builds and inspects the wheel and sdist, installs the wheel in an isolated runner environment, and exercises the installed CLI from outside the checkout. The richer repository workflow does not change the minimal `github-actions` component generated into user projects.
+
 ## Known limitations and technical debt
 
-- The full generation lifecycle is supported only on Windows 10 and Windows 11 and assumes Windows `.venv/Scripts/*.exe` paths; the Python 3.12-3.14 support claim still requires real interpreter-matrix validation before release.
+- The full generation lifecycle is supported only on Windows 10 and Windows 11 and assumes Windows `.venv/Scripts/*.exe` paths. The repository workflow expresses the Python 3.12-3.14 matrix, but the support claim still requires successful GitHub runs before release.
+- GitHub's `windows-latest` runner validates Windows runner compatibility; it does not literally validate both Windows 10 and Windows 11 client editions. Native client smoke validation may remain a release-stage manual check.
 - Automated coverage includes component metadata and registry behavior, user configuration, create-input resolution, project-name and destination safety, template metadata and registry behavior, list output, shared template contracts, exact normalized template-owned file snapshots, all built-in structures, generated CLI subprocess behavior, template-aware VS Code behavior, and isolated selection through `ProjectGenerator`; the real external lifecycle and other application areas remain uncovered.
 - `author` and `license` are persisted but not applied to generated content.
 - `TemplateRegistry.get()` raises `KeyError` for unknown names rather than producing a command-level error.

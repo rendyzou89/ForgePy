@@ -31,7 +31,9 @@ separate release-readiness decisions.
 
 The implementation and generated VS Code configuration currently assume Windows-style virtual-environment paths.
 
-Before the support claim becomes release-final, CI must run on `windows-latest` for CPython 3.12, 3.13, and 3.14. Every matrix entry must run the full unit suite, `compileall`, and packaging/support tests. The Python 3.12 job must also build and inspect the wheel and sdist, install the wheel in an isolated environment, run the installed `forgepy --help`, `forgepy version`, `forgepy list`, and `forgepy component list` commands, verify the expected ForgePy version, and verify that tests and `utils` remain absent from the distribution artifacts. Local success on a single interpreter is not evidence for the complete matrix.
+Repository CI is defined in `.github/workflows/ci.yml` and targets `windows-latest` with CPython 3.12, 3.13, and 3.14. Every matrix entry runs the full unit suite, `compileall`, and packaging/support tests. The Python 3.12 job also builds and inspects the wheel and sdist, installs the wheel in an isolated environment, runs the installed `forgepy --help`, `forgepy version`, `forgepy list`, and `forgepy component list` commands from outside the checkout, verifies the expected ForgePy version, and verifies that tests and `utils` remain absent from the distribution artifacts.
+
+The support claim becomes release-final only after all real GitHub matrix jobs pass. Adding or locally reviewing the workflow does not prove those runs succeeded. The hosted `windows-latest` runner validates Windows runner compatibility but does not literally prove both Windows 10 and Windows 11 client editions; native client smoke validation may remain a release-stage manual check. This repository workflow is intentionally richer than the independent `github-actions` component generated into user projects.
 
 ## Coding style
 
