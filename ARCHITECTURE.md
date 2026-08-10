@@ -222,9 +222,9 @@ flowchart TD
     Generator --> Environment[EnvironmentBuilder]
     Generator --> PythonTools[PythonToolsBuilder]
     Generator --> Requirements[RequirementsInstaller]
-    Generator --> Git[GitBuilder]
     Generator -->|project root + selected template requirement| VSCode[VSCodeBuilder]
     VSCode --> VSCodeTemplates[templates.vscode]
+    Generator --> Git[GitBuilder]
 ```
 
 CLI and orchestration layers depend on lower-level services. Template content modules do not depend on the CLI or generator. Builders receive paths and content rather than parsing arguments or selecting templates. `ComponentCommand` is the only application connection to the component foundation; components remain disconnected from configuration, templates, builders, `ProjectGenerator`, and generated-project creation.
@@ -429,8 +429,8 @@ The generator then executes these stages in order:
 6. Create `.venv`.
 7. Upgrade `pip`, `setuptools`, and `wheel`.
 8. Install packages from `requirements.txt` when present and non-empty.
-9. Initialize Git and attempt an initial commit.
-10. Write Visual Studio Code configuration.
+9. Write Visual Studio Code configuration.
+10. Initialize Git, stage all generated content, and attempt an initial commit.
 11. Print the resulting project path.
 
 All destination checks and template lookup occur before the project root or template files are created. Existing destinations are never merged with ForgePy output. Unknown template names retain the registry's existing `KeyError` semantics without leaving an empty project root.
@@ -480,11 +480,16 @@ sequenceDiagram
     G->>E: Create .venv
     G->>E: Upgrade pip, setuptools, wheel
     G->>R: Install non-empty requirements
-    G->>Git: Initialize and attempt initial commit
     T-->>G: vscode_entry_point
     G->>V: Write .vscode for explicit entry point
+    G->>Git: Initialize, stage all generated content, and commit
     G-->>C: Print completion and project path
 ```
+
+VS Code generation completes before Git initialization so `.vscode` is part
+of the initial staging set. A VS Code failure prevents Git from running, and a
+Git commit failure propagates before completion is reported; partial project
+files remain because the lifecycle provides no rollback.
 
 The current implementation uses Windows executable paths such as `.venv/Scripts/python.exe` and `.venv/Scripts/pip.exe`.
 

@@ -27,8 +27,8 @@ ForgePy favors understandable automation, explicit architectural boundaries, com
 - Generate a minimal command-line package with `__main__.py`, an argparse interface, empty requirements, and executable module, help, version, and editor entry points.
 - The `basic` template generates the configured folder layout and nine root files.
 - Create `.venv`, upgrade `pip`, `setuptools`, and `wheel`, and install generated requirements.
-- Initialize Git, stage generated content, and attempt an initial commit.
 - Generate four VS Code files matched to the selected template: `basic` targets `app.py`, `library` declares no application entry point, and `cli` targets its generated package `cli.py`.
+- After VS Code generation, initialize Git, stage all generated content, and attempt an initial commit; VS Code or Git failure prevents full-success reporting.
 - Load, validate, update, reset, and atomically save user configuration at `~/.forgepy/config.json` through `ConfigStore`.
 - Show, set, and reset persistent values through `python main.py config` without duplicating storage logic in the CLI.
 - Resolve omitted create location and template values from `default_location` and `default_template`, after explicit CLI arguments and before the existing prompt/`basic` fallback.

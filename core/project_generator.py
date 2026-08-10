@@ -104,12 +104,6 @@ class ProjectGenerator:
         RequirementsInstaller().install(config.root)
 
         # ==========================
-        # Git
-        # ==========================
-
-        GitBuilder().create(config.root)
-
-        # ==========================
         # VSCode
         # ==========================
 
@@ -117,6 +111,12 @@ class ProjectGenerator:
             config.root,
             entry_point=template.vscode_entry_point,
         )
+
+        # ==========================
+        # Git
+        # ==========================
+
+        GitBuilder().create(config.root)
 
         print()
         print("=" * 40)
