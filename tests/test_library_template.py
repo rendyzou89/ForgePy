@@ -241,18 +241,24 @@ class LibraryTemplateTests(unittest.TestCase):
                                         template_name="library",
                                     )
 
+            resolved_project_root = project_root.resolve()
+            self.assertEqual(resolved_project_root.parent, parent.resolve())
             self.assertTrue(
-                (project_root / "demolib" / "__init__.py").is_file()
+                (
+                    resolved_project_root / "demolib" / "__init__.py"
+                ).is_file()
             )
             self.assertTrue(
-                (project_root / "tests" / "__init__.py").is_file()
+                (
+                    resolved_project_root / "tests" / "__init__.py"
+                ).is_file()
             )
-            environment.assert_called_once_with(project_root)
-            python_tools.assert_called_once_with(project_root)
-            requirements.assert_called_once_with(project_root)
-            git.assert_called_once_with(project_root)
+            environment.assert_called_once_with(resolved_project_root)
+            python_tools.assert_called_once_with(resolved_project_root)
+            requirements.assert_called_once_with(resolved_project_root)
+            git.assert_called_once_with(resolved_project_root)
             vscode.assert_called_once_with(
-                project_root,
+                resolved_project_root,
                 entry_point=None,
             )
 
@@ -319,19 +325,25 @@ class LibraryTemplateTests(unittest.TestCase):
                 main()
 
             prompt.assert_called_once_with("Location : ")
+            resolved_project_root = project_root.resolve()
+            self.assertEqual(resolved_project_root.parent, parent.resolve())
             self.assertTrue(
-                (project_root / "demolib" / "__init__.py").is_file()
+                (
+                    resolved_project_root / "demolib" / "__init__.py"
+                ).is_file()
             )
             self.assertTrue(
-                (project_root / "tests" / "__init__.py").is_file()
+                (
+                    resolved_project_root / "tests" / "__init__.py"
+                ).is_file()
             )
             self.assertFalse(isolated_home.exists())
-            environment.assert_called_once_with(project_root)
-            python_tools.assert_called_once_with(project_root)
-            requirements.assert_called_once_with(project_root)
-            git.assert_called_once_with(project_root)
+            environment.assert_called_once_with(resolved_project_root)
+            python_tools.assert_called_once_with(resolved_project_root)
+            requirements.assert_called_once_with(resolved_project_root)
+            git.assert_called_once_with(resolved_project_root)
             vscode.assert_called_once_with(
-                project_root,
+                resolved_project_root,
                 entry_point=None,
             )
 

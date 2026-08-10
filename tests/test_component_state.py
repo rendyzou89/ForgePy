@@ -143,9 +143,10 @@ class ComponentStateStoreTests(unittest.TestCase):
         self.store.save(("pytest",))
         original = self.store.state_path.read_bytes()
         original_replace = Path.replace
+        resolved_state_path = self.store.state_path.resolve()
 
         def fail_for_temporary_file(source: Path, target: Path) -> Path:
-            if target == self.store.state_path:
+            if target.resolve() == resolved_state_path:
                 raise OSError("replace failed")
             return original_replace(source, target)
 
@@ -157,6 +158,10 @@ class ComponentStateStoreTests(unittest.TestCase):
                 self.store.save(("lint",))
 
         self.assertEqual(self.store.state_path.read_bytes(), original)
+        self.assertEqual(
+            tuple(self.store.state_directory.glob("*.tmp")),
+            (),
+        )
 
     def test_atomic_temporary_file_uses_validated_state_directory(self) -> None:
         original_named_temporary_file = tempfile.NamedTemporaryFile
