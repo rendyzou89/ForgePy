@@ -83,17 +83,19 @@ class ComponentCommand(Command):
             help="Path to an existing project directory.",
         )
 
-    def execute(self, args: Namespace) -> None:
+    def execute(self, args: Namespace) -> int:
         action = getattr(args, "component_action", None)
 
         if action == "list":
             self._list()
+            return 0
         elif action == "installed":
-            self._installed(args.project)
+            return self._installed(args.project)
         elif action == "add":
-            self._add(args.component_name, args.project)
+            return self._add(args.component_name, args.project)
         else:
             print(f"[ERROR] Unknown component action: '{action}'.")
+            return 1
 
     def _list(self) -> None:
         print("=" * 40)
@@ -105,25 +107,33 @@ class ComponentCommand(Command):
             print(f"- {metadata.name}: {metadata.description}")
 
     @staticmethod
-    def _installed(project_path: Path) -> None:
+    def _installed(project_path: Path) -> int:
         try:
             installed_components = ComponentStateStore(project_path).load()
         except ForgePyComponentStateError as error:
             print(f"[ERROR] {error}")
-            return
+            return 1
         except (TypeError, ValueError) as error:
             print(f"[ERROR] Invalid project path '{project_path}': {error}")
-            return
+            return 1
 
         if not installed_components:
             print("No installed components.")
-            return
+            return 0
 
         print("Installed components:")
         for component_name in sorted(installed_components):
             print(f"- {component_name}")
 
-    def _add(self, name: str, project_path: Path) -> None:
+        return 0
+
+    def _add(self, name: str, project_path: Path) -> int:
+        try:
+            self._get_registry().get(name)
+        except KeyError:
+            print(f"[ERROR] Unknown ForgePy component: '{name}'.")
+            return 1
+
         try:
             ComponentInstaller(
                 registry=self._get_registry(),
@@ -131,36 +141,34 @@ class ComponentCommand(Command):
                 name=name,
                 project_path=project_path,
             )
-        except KeyError:
-            print(f"[ERROR] Unknown ForgePy component: '{name}'.")
-            return
         except ComponentAlreadyInstalledError as error:
             print(f"[ERROR] {error}")
-            return
+            return 1
         except ComponentValidationError as error:
             print(f"[ERROR] {error}")
-            return
+            return 1
         except ForgePyComponentStateError as error:
             print(f"[ERROR] {error}")
-            return
+            return 1
         except (TypeError, ValueError) as error:
             print(f"[ERROR] Invalid project path '{project_path}': {error}")
-            return
+            return 1
         except FileExistsError as error:
             target = error.filename or str(project_path)
             print(
                 "[ERROR] Component installation refused because the target "
                 f"already exists: '{target}'."
             )
-            return
+            return 1
         except OSError as error:
             print(f"[ERROR] Component installation failed: {error}")
-            return
+            return 1
 
         print(
             f"[OK] Component '{name}' added to project "
             f"'{project_path}'."
         )
+        return 0
 
     def _get_registry(self) -> ComponentRegistry:
         if self._registry is None:

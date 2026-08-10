@@ -40,6 +40,8 @@ The component foundation is exposed by the component CLI but remains independent
 
 `ConfigCommand` manages all persisted values. `CreateCommand` consumes only `default_location` and `default_template`; `author` and `license` remain unused. `ProjectGenerator` does not depend on `ConfigStore`. Before its established template and tooling stages, it requires a validated one-segment name and a nonexistent direct-child destination, looks up the template, and invokes its side-effect-free preflight before creating the root. `FileTemplate` preflights through the same context construction used for generation, so library and CLI reject unusable normalized package identifiers while basic retains the broader `ProjectConfig` name contract.
 
+The CLI uses three process-status outcomes: successful commands return `0`, handled operational or user failures return `1`, and argparse syntax or usage failures retain status `2`. Command handlers translate only expected boundary failures into concise `[ERROR]` output, the dispatcher propagates their integer status, and `main` exits with it; unexpected programming errors continue to surface.
+
 ## Repository structure
 
 | Path | Current role |

@@ -363,6 +363,36 @@ class CreateCommandConfigTests(unittest.TestCase):
             template_name="basic",
         )
 
+    def test_unexpected_generator_key_error_propagates(self) -> None:
+        with patch(
+            "cli.commands.create_command.ProjectGenerator"
+        ) as generator:
+            generator.return_value.create.side_effect = KeyError("rendering")
+
+            with self.assertRaisesRegex(KeyError, "rendering"):
+                self.command.execute(
+                    Namespace(
+                        project_name="Example",
+                        location=str(self.home_directory),
+                        template="basic",
+                    )
+                )
+
+    def test_unexpected_generator_value_error_propagates(self) -> None:
+        with patch(
+            "cli.commands.create_command.ProjectGenerator"
+        ) as generator:
+            generator.return_value.create.side_effect = ValueError("rendering")
+
+            with self.assertRaisesRegex(ValueError, "rendering"):
+                self.command.execute(
+                    Namespace(
+                        project_name="Example",
+                        location=str(self.home_directory),
+                        template="basic",
+                    )
+                )
+
     def _execute(
         self,
         *,

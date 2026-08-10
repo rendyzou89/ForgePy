@@ -43,7 +43,7 @@ class Dispatcher:
                 f"Default command '{DEFAULT_COMMAND}' belum terdaftar."
             )
 
-    def dispatch(self, args: Namespace) -> None:
+    def dispatch(self, args: Namespace) -> int:
         # Menjaga kompatibilitas:
         # `python main.py` langsung membuka wizard create.
         command_name = getattr(
@@ -56,6 +56,6 @@ class Dispatcher:
 
         if command is None:
             print(f"[ERROR] Command tidak dikenal: {command_name}")
-            return
+            return 1
 
-        command.execute(args)
+        return command.execute(args)

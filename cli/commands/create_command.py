@@ -5,11 +5,16 @@ Module  : Create Command
 ==================================================
 """
 
+import subprocess
 from argparse import ArgumentParser, Namespace
 
 from cli.command import Command
 from config.user_config import ConfigStore, ForgePyConfigError
-from core.project_generator import ProjectGenerator
+from core.project_generator import (
+    ProjectGenerator,
+    ProjectPreflightError,
+    UnknownProjectTemplateError,
+)
 
 
 class CreateCommand(Command):
@@ -67,7 +72,7 @@ class CreateCommand(Command):
             ),
         )
 
-    def execute(self, args: Namespace) -> None:
+    def execute(self, args: Namespace) -> int:
         location = getattr(
             args,
             "location",
@@ -90,7 +95,7 @@ class CreateCommand(Command):
                     "[INFO] Run 'python main.py config reset' or supply "
                     "both --location and --template explicitly."
                 )
-                return
+                return 1
 
         project_name = getattr(
             args,
@@ -122,19 +127,32 @@ class CreateCommand(Command):
 
         if not project_name:
             print("[ERROR] Nama project tidak boleh kosong.")
-            return
+            return 1
 
         if not location:
             print("[ERROR] Lokasi project tidak boleh kosong.")
-            return
+            return 1
 
         generator = ProjectGenerator()
 
-        generator.create(
-            project_name=project_name,
-            location=location,
-            template_name=template_name,
-        )
+        try:
+            generator.create(
+                project_name=project_name,
+                location=location,
+                template_name=template_name,
+            )
+        except UnknownProjectTemplateError:
+            print(f"[ERROR] Unknown project template: '{template_name}'.")
+            return 1
+        except (
+            ProjectPreflightError,
+            OSError,
+            subprocess.SubprocessError,
+        ) as error:
+            print(f"[ERROR] Project creation failed: {error}")
+            return 1
+
+        return 0
 
     def _get_store(self) -> ConfigStore:
         if self._store is None:

@@ -35,7 +35,7 @@ Template selection belongs to `TemplateRegistry`; `TemplateMetadata` describes r
 
 ### Prefer small contracts
 
-Extend commands through the shared `Command` metadata and `execute()` contract, override `configure_parser()` when arguments are required, and add built-in commands to the explicit catalog in `cli.commands`. Preserve the public `BaseTemplate` contract; built-in file templates use the focused `FileTemplate` hooks for context, folders, files, and VS Code entry-point resolution. Keep descriptive metadata in the template registry rather than builders or rendered content. Keep inputs explicit, use type hints, and pass `pathlib.Path` objects at file-system boundaries.
+Extend commands through the shared `Command` metadata and integer-status `execute()` contract, override `configure_parser()` when arguments are required, and add built-in commands to the explicit catalog in `cli.commands`. Preserve the public `BaseTemplate` contract; built-in file templates use the focused `FileTemplate` hooks for context, folders, files, and VS Code entry-point resolution. Keep descriptive metadata in the template registry rather than builders or rendered content. Keep inputs explicit, use type hints, and pass `pathlib.Path` objects at file-system boundaries.
 
 Extend the component catalog through `BaseComponent`, `ComponentMetadata`, `ComponentManifest`, `ComponentContext`, and explicit `ComponentRegistry.register()` calls; keep the default catalog limited to explicitly approved built-ins and keep relationship resolution and installation outside the registry.
 

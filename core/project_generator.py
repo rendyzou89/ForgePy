@@ -13,6 +13,14 @@ from models.project_config import ProjectConfig
 from templates.template_engine.template_registry import TemplateRegistry
 
 
+class ProjectPreflightError(ValueError):
+    """An expected project validation failure before root creation."""
+
+
+class UnknownProjectTemplateError(KeyError):
+    """The requested project template is not registered."""
+
+
 class ProjectGenerator:
 
     def create(
@@ -22,41 +30,49 @@ class ProjectGenerator:
         template_name: str = "basic",
     ) -> None:
 
-        location_path = Path(location).resolve()
+        try:
+            location_path = Path(location).resolve()
 
-        if not location_path.exists():
-            print(f"[ERROR] Folder '{location_path}' tidak ditemukan.")
-            return
+            if not location_path.exists():
+                raise ValueError(
+                    f"Project location does not exist: '{location_path}'."
+                )
 
-        if not location_path.is_dir():
-            raise ValueError(
-                f"Project location must be a directory: '{location_path}'."
+            if not location_path.is_dir():
+                raise ValueError(
+                    f"Project location must be a directory: '{location_path}'."
+                )
+
+            config = ProjectConfig(
+                name=project_name,
+                location=location_path,
             )
 
-        config = ProjectConfig(
-            name=project_name,
-            location=location_path,
-        )
+            destination = config.root
 
-        destination = config.root
+            if os.path.lexists(destination):
+                raise FileExistsError(
+                    f"Project destination already exists: '{destination}'."
+                )
 
-        if os.path.lexists(destination):
-            raise FileExistsError(
-                f"Project destination already exists: '{destination}'."
-            )
+            resolved_destination = destination.resolve(strict=False)
 
-        resolved_destination = destination.resolve(strict=False)
+            if resolved_destination.parent != location_path:
+                raise ValueError(
+                    "Project destination must remain directly below the "
+                    f"selected location: '{resolved_destination}'."
+                )
 
-        if resolved_destination.parent != location_path:
-            raise ValueError(
-                "Project destination must remain directly below the selected "
-                f"location: '{resolved_destination}'."
-            )
+            registry = TemplateRegistry()
 
-        registry = TemplateRegistry()
-        template = registry.get(template_name)
+            try:
+                template = registry.get(template_name)
+            except KeyError as error:
+                raise UnknownProjectTemplateError(template_name) from error
 
-        template.preflight(destination)
+            template.preflight(destination)
+        except ValueError as error:
+            raise ProjectPreflightError(str(error)) from error
 
         destination.mkdir(
             parents=True,

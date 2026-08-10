@@ -9,12 +9,12 @@ from cli.dispatcher import Dispatcher
 from cli.parser import Parser
 
 
-def main() -> None:
+def main() -> int:
     parser = Parser()
     args = parser.parse()
 
-    Dispatcher().dispatch(args)
+    return Dispatcher().dispatch(args)
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
