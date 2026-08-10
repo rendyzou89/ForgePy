@@ -42,6 +42,11 @@ class BaseTemplate(ABC):
 
         return "app.py"
 
+    def preflight(self, project_path: Path) -> None:
+        """Validate template-specific inputs before project creation."""
+
+        del project_path
+
     @abstractmethod
     def create(
         self,

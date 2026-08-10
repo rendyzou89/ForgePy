@@ -34,6 +34,11 @@ class FileTemplate(BaseTemplate):
     def vscode_entry_point(self) -> str | None:
         return self._vscode_entry_point
 
+    def preflight(self, project_path: Path) -> None:
+        """Build context to validate template-specific inputs."""
+
+        self._build_context(project_path)
+
     def create(self, project_path: Path) -> None:
         context = self._build_context(project_path)
 

@@ -143,6 +143,9 @@ class TemplateMetadataTests(unittest.TestCase):
         self.assertEqual(metadata.author, "")
         self.assertEqual(metadata.tags, ())
 
+    def test_legacy_template_preflight_is_harmless(self) -> None:
+        self.assertIsNone(LegacyTemplate().preflight(Path("LegacyProject")))
+
 
 class TemplateRegistryTests(unittest.TestCase):
 

@@ -56,6 +56,8 @@ class ProjectGenerator:
         registry = TemplateRegistry()
         template = registry.get(template_name)
 
+        template.preflight(destination)
+
         destination.mkdir(
             parents=True,
             exist_ok=False,
