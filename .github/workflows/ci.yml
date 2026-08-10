@@ -86,6 +86,16 @@ jobs:
               )
               metadata = email.message_from_bytes(wheel.read(metadata_name))
               assert metadata["Version"] == VERSION
+              assert metadata["Description-Content-Type"] == "text/markdown"
+              assert metadata["License-Expression"] == "MIT"
+              assert metadata["License-File"] == "LICENSE"
+
+              license_name = next(
+                  name
+                  for name in wheel_names
+                  if name.endswith(".dist-info/licenses/LICENSE")
+              )
+              assert wheel.read(license_name).startswith(b"MIT License")
 
               entry_points_name = next(
                   name
@@ -107,6 +117,9 @@ jobs:
               }
               assert required_roots <= sdist_roots, required_roots - sdist_roots
               assert "pyproject.toml" in relative_names
+              assert "README.md" in relative_names
+              assert "CHANGELOG.md" in relative_names
+              assert "LICENSE" in relative_names
               assert "cli/commands/__init__.py" in relative_names
               assert "tests" not in sdist_roots
               assert "utils" not in sdist_roots
@@ -120,6 +133,9 @@ jobs:
                   sdist.extractfile(pkg_info_name).read()
               )
               assert pkg_info["Version"] == VERSION
+              assert pkg_info["Description-Content-Type"] == "text/markdown"
+              assert pkg_info["License-Expression"] == "MIT"
+              assert pkg_info["License-File"] == "LICENSE"
           '@ | python -
 
       - name: Install wheel and validate installed CLI

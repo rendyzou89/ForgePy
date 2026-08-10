@@ -151,6 +151,32 @@ finally {
 
 `python main.py` and `python main.py create <name> --location <existing-path> --template <basic-or-library-or-cli>` are also supported, but they start or perform a side-effectful generation lifecycle. Omitted location or template options can read the current user configuration; use both explicit options for a deterministic bypass or isolate `USERPROFILE`. Run generation only with deliberate input in an isolated temporary parent directory because it may build an environment, install packages, and initialize Git.
 
+### Release-candidate validation gate
+
+An RC review requires all of the following evidence:
+
+1. Run the full unit suite, `compileall`, and source-tree `--help`, `version`,
+   `list`, and `component list` probes.
+2. Build fresh wheel and sdist artifacts.
+3. Inspect both artifacts for the canonical version, README metadata, MIT
+   license metadata and file, console entry point, required runtime packages,
+   sdist `CHANGELOG.md` and `pyproject.toml`, and absence of `tests` and `utils`.
+4. Install the wheel without dependencies into a clean isolated environment.
+5. From outside the checkout, run installed `forgepy --help`, `forgepy version`,
+   `forgepy list`, and `forgepy component list`.
+6. Confirm Git is available, use temporary process-scoped Git identity/config,
+   and create at least one temporary project with the installed CLI outside the
+   checkout. Verify successful exit, expected template files, `.venv`, applicable
+   VS Code configuration, `.git`, and an initial commit, then remove the project.
+
+The GitHub-hosted `windows-latest` matrix does not literally validate native
+Windows 10 or Windows 11 clients. For each native client that is actually
+available, record a manual checklist covering RC-wheel installation, `forgepy
+--help`, `forgepy version`, `forgepy list`, temporary basic-project creation,
+virtual-environment creation, Git initialization and initial commit, expected
+project structure, and cleanup. Do not claim an edition passed without recorded
+evidence.
+
 ## Pull request rules
 
 - Open one pull request per logical change.

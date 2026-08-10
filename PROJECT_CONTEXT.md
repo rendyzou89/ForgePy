@@ -6,9 +6,9 @@
 - **Purpose:** generate a structured starter Python project from a CLI, then prepare its virtual environment, dependencies, Git repository, and VS Code configuration.
 - **Protected stable branch policy:** treat `master` as protected and stable
 - **Current stable release/tag:** `v0.6.0` (`Sprint 6 Stable`)
-- **Current development area:** Sprint 12.5, preparing release metadata and changelog content while retaining version 0.6.0.
+- **Current development area:** Sprint 12.6, validating the `1.0.0rc1` release candidate.
 
-`config/version.py` is the canonical ForgePy version source and reports `0.6.0`, matching the `v0.6.0` stable release tag. No release tag newer than `v0.6.0` exists.
+`config/version.py` is the canonical ForgePy version source and reports `1.0.0rc1`. The latest stable tag remains `v0.6.0`; no RC or final v1.0 tag or publication exists.
 
 ## ForgePy Philosophy
 
@@ -17,6 +17,7 @@ ForgePy favors understandable automation, explicit architectural boundaries, com
 ## Implemented capabilities
 
 - Publish release-facing package metadata from `pyproject.toml`, including the README long description, verified repository URLs, keywords, a pre-stable Beta classifier, and the maintainer-selected MIT License through PEP 639 metadata.
+- Derive the `1.0.0rc1` distribution version dynamically from the canonical application version source.
 - Define repository CI on `windows-latest` for CPython 3.12, 3.13, and 3.14, including mandatory Python 3.12 distribution inspection, isolated wheel installation, and installed CLI probes.
 - Install ForgePy through standards-based setuptools metadata and expose the existing `main:main` CLI flow as the `forgepy` console command.
 - Parse and dispatch `create`, `list`, `version`, and `config` commands through one shared catalog.
@@ -54,7 +55,7 @@ A successful `create` includes successful Git initialization, staging, and initi
 | Path | Current role |
 | --- | --- |
 | `.github/workflows/ci.yml` | Repository-only Windows/CPython matrix and distribution validation. |
-| `CHANGELOG.md` | Release-facing Unreleased changes and the tagged `0.6.0` baseline. |
+| `CHANGELOG.md` | Release-facing Unreleased changes, prepared `1.0.0rc1` contents, and the tagged `0.6.0` historical baseline. |
 | `builders/` | Folder/file creation and packaging-tool updates. |
 | `cli/` | Parser, dispatcher, command contract, and commands. |
 | `components/` | Immutable component metadata and manifest, validated project context, minimal installation/state/validation contracts, the `pytest`, `ruff`, and `github-actions` built-ins, and an in-memory registry. |
@@ -89,7 +90,7 @@ The root `README.md` is the public installation and usage guide. The root `requi
 - Continue expanding automated coverage across supported commands, lifecycle stages, and failure handling.
 - Keep the passing repository workflow green on `windows-latest` with CPython 3.12, 3.13, and 3.14. Every job runs the full unit suite, `compileall`, and packaging/support tests; Python 3.12 also validates the built artifacts and installed CLI. GitHub runner success does not literally prove Windows 10 and Windows 11 client behavior, so native client smoke validation may remain a release-stage manual check.
 - Keep the root MIT License, SPDX package metadata, and distributed license file aligned.
-- Use Sprint 12.6 for release-candidate validation without treating Sprint 12.5 as a version bump or release.
+- Complete the documented Sprint 12.6 artifact, isolated-installation, installed-CLI, temporary project-generation, and native-client validation gates before proposing final v1.0.0.
 
 ## Long-term v1.0 direction
 
@@ -103,12 +104,12 @@ Use this section as the handoff point for a new developer or AI session.
 | --- | --- |
 | Stable baseline | `v0.6.0` (`Sprint 6 Stable`) |
 | Current branch policy | Repository policy treats `master` as protected; use a feature branch for implementation |
-| Active development area | Sprint 12.5 release metadata and changelog preparation; Sprint 12.6 is the next release-candidate stage |
+| Active development area | Sprint 12.6 validation of the `1.0.0rc1` release candidate |
 | Implemented CLI | `create`, `list`, `version`, `config show/set/reset`, `component list/installed/add`, plus no-command interactive create |
 | Implemented templates | `basic`, `library`, and `cli`, all with descriptive metadata |
 | Component state | Registry with `pytest`, `ruff`, and `github-actions` built-ins, project-local installed names, direct validation, and shared library/CLI orchestration; no generation integration |
-| Version source | `config/version.py`, aligned with the `v0.6.0` release tag |
-| Verification state | Repository CI passes on Windows runners with CPython 3.12-3.14 and Python 3.12 artifact/install checks. Local `unittest` coverage includes CI structure, packaging, components, templates, configuration, CLI, and lifecycle boundaries. |
+| Version source | `config/version.py`, currently `1.0.0rc1`; the latest stable tag remains `v0.6.0` |
+| Verification state | The prior repository matrix passes; this RC patch still requires its actual PR CI matrix run, and native Windows client evidence remains pending. |
 
 To resume work:
 

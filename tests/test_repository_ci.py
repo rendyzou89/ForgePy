@@ -57,9 +57,23 @@ class RepositoryCIContractTests(unittest.TestCase):
         self.assertIn("zipfile.ZipFile", self.workflow)
         self.assertIn("tarfile.open", self.workflow)
         self.assertIn('metadata["Version"] == VERSION', self.workflow)
+        self.assertIn(
+            'metadata["License-Expression"] == "MIT"',
+            self.workflow,
+        )
+        self.assertIn(
+            '.dist-info/licenses/LICENSE',
+            self.workflow,
+        )
         self.assertIn("forgepy = main:main", self.workflow)
         self.assertIn('assert "tests" not in wheel_roots', self.workflow)
         self.assertIn('assert "pyproject.toml" in relative_names', self.workflow)
+        for release_file in ("README.md", "CHANGELOG.md", "LICENSE"):
+            with self.subTest(release_file=release_file):
+                self.assertIn(
+                    f'assert "{release_file}" in relative_names',
+                    self.workflow,
+                )
         self.assertIn('assert "utils" not in sdist_roots', self.workflow)
 
     def test_python_312_installs_wheel_and_runs_installed_cli(self) -> None:

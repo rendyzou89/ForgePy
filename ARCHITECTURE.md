@@ -133,6 +133,31 @@ metadata classifies the current development line as Beta; repository licensing
 uses the SPDX expression `MIT` and includes the root `LICENSE` file through
 PEP 639 metadata. No legacy license classifier is used.
 
+The current application version is `1.0.0rc1`, the first v1.0 release
+candidate. It remains dynamically sourced from `config.version.VERSION`; it is
+not the final `1.0.0` release and does not imply publication.
+
+## Release-Candidate Validation
+
+The Sprint 12.6 RC gate requires the full unit suite, `compileall`, source-tree
+CLI smoke checks, and fresh wheel and sdist builds. Artifact inspection must
+confirm the canonical version, README metadata, MIT metadata and license file,
+the console entry point, required runtime packages, the sdist changelog and
+`pyproject.toml`, and exclusion of `tests` and `utils`. The built wheel must then
+be installed into a clean isolated environment and its installed CLI exercised
+outside the source checkout.
+
+The final automated-local gate is a temporary installed-wheel project creation
+that verifies template output, `.venv`, applicable VS Code files, Git repository
+initialization and initial commit, successful exit, and confinement outside the
+ForgePy checkout. Git availability is checked first and test identity is
+isolated without changing global Git configuration. Temporary artifacts are
+removed after validation.
+
+GitHub-hosted `windows-latest` matrix success is evidence for the hosted runner,
+not literal Windows 10 and Windows 11 client validation. Native-client results
+must be recorded separately before either client edition is claimed as tested.
+
 ## User Configuration
 
 `ConfigStore` persists user-level settings at `~/.forgepy/config.json`. Its constructor accepts an alternate home directory so tests and library callers can isolate all file-system effects. `ConfigCommand` exposes the store without duplicating its validation or persistence rules.

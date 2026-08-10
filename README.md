@@ -133,7 +133,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for repository workflow and review expect
 
 ## Current Status
 
-ForgePy is currently version 0.6.0 and is being prepared toward v1.0.
+ForgePy's current development artifact is version 1.0.0rc1. This is a release
+candidate; final v1.0.0 has not been released, and ForgePy is not currently
+published on PyPI.
 
 ## License
 
