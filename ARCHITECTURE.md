@@ -129,13 +129,15 @@ Its distribution version is read dynamically from `config.version.VERSION`,
 its Markdown long description comes from `README.md`, and its verified project
 URLs point to the ForgePy GitHub repository and issue tracker. It declares no
 third-party Python runtime dependencies or non-Python package data. Release
-metadata classifies the current development line as Beta; repository licensing
+metadata classifies the prepared `1.0.0` release as
+`Development Status :: 5 - Production/Stable`; repository licensing
 uses the SPDX expression `MIT` and includes the root `LICENSE` file through
 PEP 639 metadata. No legacy license classifier is used.
 
-The current application version is `1.0.0rc1`, the first v1.0 release
-candidate. It remains dynamically sourced from `config.version.VERSION`; it is
-not the final `1.0.0` release and does not imply publication.
+The current application version is `1.0.0`, prepared as the final release
+source after validation of `1.0.0rc1`. It remains dynamically sourced from
+`config.version.VERSION`; the source version does not imply that the final Git
+tag, GitHub Release, or a PyPI publication already exists.
 
 ## Release-Candidate Validation
 

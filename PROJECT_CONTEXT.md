@@ -6,9 +6,9 @@
 - **Purpose:** generate a structured starter Python project from a CLI, then prepare its virtual environment, dependencies, Git repository, and VS Code configuration.
 - **Protected stable branch policy:** treat `master` as protected and stable
 - **Current stable release/tag:** `v0.6.0` (`Sprint 6 Stable`)
-- **Current development area:** Sprint 12.6, validating the `1.0.0rc1` release candidate.
+- **Current development area:** Sprint 12.7, preparing the final `1.0.0` source for release validation.
 
-`config/version.py` is the canonical ForgePy version source and reports `1.0.0rc1`. The latest stable tag remains `v0.6.0`; no RC or final v1.0 tag or publication exists.
+`config/version.py` is the canonical ForgePy version source and reports `1.0.0`. The validated `v1.0.0rc1` tag and GitHub prerelease exist; the final `v1.0.0` tag, final GitHub Release, and PyPI publication do not.
 
 ## ForgePy Philosophy
 
@@ -16,8 +16,8 @@ ForgePy favors understandable automation, explicit architectural boundaries, com
 
 ## Implemented capabilities
 
-- Publish release-facing package metadata from `pyproject.toml`, including the README long description, verified repository URLs, keywords, a pre-stable Beta classifier, and the maintainer-selected MIT License through PEP 639 metadata.
-- Derive the `1.0.0rc1` distribution version dynamically from the canonical application version source.
+- Publish release-facing package metadata from `pyproject.toml`, including the README long description, verified repository URLs, keywords, a Production/Stable classifier for the prepared `1.0.0` source, and the maintainer-selected MIT License through PEP 639 metadata.
+- Derive the prepared `1.0.0` distribution version dynamically from the canonical application version source.
 - Define repository CI on `windows-latest` for CPython 3.12, 3.13, and 3.14, including mandatory Python 3.12 distribution inspection, isolated wheel installation, and installed CLI probes.
 - Install ForgePy through standards-based setuptools metadata and expose the existing `main:main` CLI flow as the `forgepy` console command.
 - Parse and dispatch `create`, `list`, `version`, and `config` commands through one shared catalog.
@@ -55,7 +55,7 @@ A successful `create` includes successful Git initialization, staging, and initi
 | Path | Current role |
 | --- | --- |
 | `.github/workflows/ci.yml` | Repository-only Windows/CPython matrix and distribution validation. |
-| `CHANGELOG.md` | Release-facing Unreleased changes, prepared `1.0.0rc1` contents, and the tagged `0.6.0` historical baseline. |
+| `CHANGELOG.md` | Release-facing Unreleased changes, prepared `1.0.0` contents, `1.0.0rc1` prerelease history, and the tagged `0.6.0` historical baseline. |
 | `builders/` | Folder/file creation and packaging-tool updates. |
 | `cli/` | Parser, dispatcher, command contract, and commands. |
 | `components/` | Immutable component metadata and manifest, validated project context, minimal installation/state/validation contracts, the `pytest`, `ruff`, and `github-actions` built-ins, and an in-memory registry. |
@@ -90,7 +90,7 @@ The root `README.md` is the public installation and usage guide. The root `requi
 - Continue expanding automated coverage across supported commands, lifecycle stages, and failure handling.
 - Keep the passing repository workflow green on `windows-latest` with CPython 3.12, 3.13, and 3.14. Every job runs the full unit suite, `compileall`, and packaging/support tests; Python 3.12 also validates the built artifacts and installed CLI. GitHub runner success does not literally prove Windows 10 and Windows 11 client behavior, so native client smoke validation may remain a release-stage manual check.
 - Keep the root MIT License, SPDX package metadata, and distributed license file aligned.
-- Complete the documented Sprint 12.6 artifact, isolated-installation, installed-CLI, temporary project-generation, and native-client validation gates before proposing final v1.0.0.
+- Complete final `1.0.0` artifact, isolated-installation, installed-CLI, temporary project-generation, PR CI, and native Windows validation before requesting authorization for the final tag and GitHub Release.
 
 ## Long-term v1.0 direction
 
@@ -104,12 +104,12 @@ Use this section as the handoff point for a new developer or AI session.
 | --- | --- |
 | Stable baseline | `v0.6.0` (`Sprint 6 Stable`) |
 | Current branch policy | Repository policy treats `master` as protected; use a feature branch for implementation |
-| Active development area | Sprint 12.6 validation of the `1.0.0rc1` release candidate |
+| Active development area | Sprint 12.7 preparation and validation of the final `1.0.0` source |
 | Implemented CLI | `create`, `list`, `version`, `config show/set/reset`, `component list/installed/add`, plus no-command interactive create |
 | Implemented templates | `basic`, `library`, and `cli`, all with descriptive metadata |
 | Component state | Registry with `pytest`, `ruff`, and `github-actions` built-ins, project-local installed names, direct validation, and shared library/CLI orchestration; no generation integration |
-| Version source | `config/version.py`, currently `1.0.0rc1`; the latest stable tag remains `v0.6.0` |
-| Verification state | The prior repository matrix passes; this RC patch still requires its actual PR CI matrix run, and native Windows client evidence remains pending. |
+| Version source | `config/version.py`, currently `1.0.0`; `v1.0.0rc1` exists, while the final `v1.0.0` tag does not |
+| Verification state | RC CI and native Windows 11 25H2 validation passed. Fresh final `1.0.0` artifacts, isolated installation, installed CLI, and native Windows 11 final-wheel E2E also pass locally; the final patch still requires its PR CI matrix run. Windows 10 has not been directly tested. |
 
 To resume work:
 
