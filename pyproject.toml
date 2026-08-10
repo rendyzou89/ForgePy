@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "forgepy"
+dynamic = ["version"]
+description = "Create structured Python projects and prepare their development tooling."
+requires-python = ">=3.12"
+dependencies = []
+authors = [
+    { name = "Rendy Zou" },
+]
+
+[project.scripts]
+forgepy = "main:main"
+
+[tool.setuptools]
+py-modules = ["main"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = [
+    "builders*",
+    "cli*",
+    "components*",
+    "config*",
+    "core*",
+    "models*",
+    "templates*",
+]
+exclude = ["tests*", "utils*"]
+
+[tool.setuptools.dynamic]
+version = { attr = "config.version.VERSION" }

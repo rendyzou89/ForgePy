@@ -293,6 +293,12 @@ Sprint 11.9 defines Git initialization, staging, and the initial commit as the r
 
 Git discovery remains owned by `GitBuilder` when its lifecycle stage is reached. Earlier generated artifacts remain because no early dependency discovery, rollback, cleanup, or new tool-management abstraction was introduced.
 
+## Completed — Sprint 12.1 Standard Python Packaging
+
+Sprint 12.1 adds a setuptools-backed root `pyproject.toml`, constrained runtime-package discovery, and the installed `forgepy` console command through the existing `main:main` entry path. Distribution version metadata reads the canonical `config.version.VERSION`, while ForgePy remains standard-library-only at runtime and keeps template and component revisions independent.
+
+Packaging excludes tests and repository-only utilities, requires no non-Python package data, and introduces no CLI duplication, source-layout migration, plugin discovery, or release framework. Repository licensing, the final README, and release artifact validation remain separate release-readiness work.
+
 ## Planned — Stabilization Toward v1.0
 
 These are outcome-oriented priorities, not guaranteed feature commitments.
