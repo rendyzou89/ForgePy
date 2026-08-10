@@ -6,7 +6,7 @@
 - **Purpose:** generate a structured starter Python project from a CLI, then prepare its virtual environment, dependencies, Git repository, and VS Code configuration.
 - **Protected stable branch policy:** treat `master` as protected and stable
 - **Current stable release/tag:** `v0.6.0` (`Sprint 6 Stable`)
-- **Current development area:** Sprint 12.2, defining the Windows and CPython support contract for v1.0 validation.
+- **Current development area:** Sprint 12.3, implementing repository CI for the Windows and CPython support contract.
 
 `config/version.py` is the canonical ForgePy version source and reports `0.6.0`, matching the `v0.6.0` stable release tag. No release tag newer than `v0.6.0` exists.
 
@@ -16,6 +16,7 @@ ForgePy favors understandable automation, explicit architectural boundaries, com
 
 ## Implemented capabilities
 
+- Define repository CI on `windows-latest` for CPython 3.12, 3.13, and 3.14, including mandatory Python 3.12 distribution inspection, isolated wheel installation, and installed CLI probes.
 - Install ForgePy through standards-based setuptools metadata and expose the existing `main:main` CLI flow as the `forgepy` console command.
 - Parse and dispatch `create`, `list`, `version`, and `config` commands through one shared catalog.
 - Fall back to an interactive create workflow when no command is supplied.
@@ -51,6 +52,7 @@ A successful `create` includes successful Git initialization, staging, and initi
 
 | Path | Current role |
 | --- | --- |
+| `.github/workflows/ci.yml` | Repository-only Windows/CPython matrix and distribution validation. |
 | `builders/` | Folder/file creation and packaging-tool updates. |
 | `cli/` | Parser, dispatcher, command contract, and commands. |
 | `components/` | Immutable component metadata and manifest, validated project context, minimal installation/state/validation contracts, the `pytest`, `ruff`, and `github-actions` built-ins, and an in-memory registry. |
@@ -83,7 +85,7 @@ The root `README.md` and `requirements.txt` are currently empty.
 - Keep further templates beyond `basic`, `library`, and `cli` subject to separate approval and compatibility review.
 - Keep persisted `author` and `license` values, and the configuration store itself, out of core generation and templates until a separate requirement explicitly defines that integration.
 - Continue expanding automated coverage across supported commands, lifecycle stages, and failure handling.
-- Validate the declared support contract on `windows-latest` with CPython 3.12, 3.13, and 3.14 before making the v1.0 claim release-final. Every matrix job must run the full unit suite, `compileall`, and packaging/support tests. The Python 3.12 job must also build and inspect the wheel and sdist, install the wheel in isolation, smoke-test the installed CLI and version, and verify that tests and `utils` remain absent from the artifacts.
+- Observe successful repository workflow runs on `windows-latest` with CPython 3.12, 3.13, and 3.14 before making the v1.0 claim release-final. The workflow runs the full unit suite, `compileall`, and packaging/support tests in every job; Python 3.12 also validates the built artifacts and installed CLI. GitHub runner success does not literally prove Windows 10 and Windows 11 client behavior, so native client smoke validation may remain a release-stage manual check.
 
 ## Long-term v1.0 direction
 
@@ -97,12 +99,12 @@ Use this section as the handoff point for a new developer or AI session.
 | --- | --- |
 | Stable baseline | `v0.6.0` (`Sprint 6 Stable`) |
 | Current branch policy | Repository policy treats `master` as protected; use a feature branch for implementation |
-| Active development area | Sprint 10.0 third built-in component |
+| Active development area | Sprint 12.3 repository CI and support-matrix validation |
 | Implemented CLI | `create`, `list`, `version`, `config show/set/reset`, `component list/installed/add`, plus no-command interactive create |
 | Implemented templates | `basic`, `library`, and `cli`, all with descriptive metadata |
 | Component state | Registry with `pytest`, `ruff`, and `github-actions` built-ins, project-local installed names, direct validation, and shared library/CLI orchestration; no generation integration |
 | Version source | `config/version.py`, aligned with the `v0.6.0` release tag |
-| Verification state | `unittest` covers component orchestration, state, validation, component and template metadata/registries, configuration, create precedence, list output, template architecture and output snapshots, CLI execution, and isolated template-aware VS Code generation; the real external lifecycle remains a manual check |
+| Verification state | Repository CI defines a Windows CPython 3.12-3.14 matrix with Python 3.12 artifact/install checks; actual GitHub runs remain required. Local `unittest` coverage includes CI structure, packaging, components, templates, configuration, CLI, and lifecycle boundaries. |
 
 To resume work:
 
