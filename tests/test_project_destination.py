@@ -12,6 +12,7 @@ from unittest.mock import Mock, patch
 
 from core.project_generator import ProjectGenerator
 from models.project_config import ProjectConfig
+from templates.template_engine.package_name import normalize_package_name
 
 
 class ProjectNameContractTests(unittest.TestCase):
@@ -220,6 +221,21 @@ class ProjectDestinationSafetyTests(unittest.TestCase):
             self.assertEqual(destination.read_bytes(), original_content)
             registry.assert_not_called()
 
+    def test_existing_destination_precedes_package_preflight(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            location = Path(temporary_directory)
+            destination = location / "---"
+            destination.mkdir()
+
+            with self.assertRaises(FileExistsError):
+                ProjectGenerator().create(
+                    project_name=destination.name,
+                    location=str(location),
+                    template_name="library",
+                )
+
+            self.assertEqual(tuple(destination.iterdir()), ())
+
     def test_existing_link_destination_is_rejected_without_outside_writes(
         self,
     ) -> None:
@@ -281,6 +297,97 @@ class ProjectDestinationSafetyTests(unittest.TestCase):
             template_create.assert_not_called()
             for stage_call in stage_calls:
                 stage_call.assert_not_called()
+
+    def test_package_templates_preflight_unusable_names_before_writes(
+        self,
+    ) -> None:
+        project_names = (
+            "\u4f60\u597d",
+            "\u65e5\u672c\u8a9e",
+            "---",
+            "___",
+            "!@#$%^&()+=,;",
+        )
+
+        for template_name in ("library", "cli"):
+            for project_name in project_names:
+                with self.subTest(
+                    template=template_name,
+                    project_name=project_name,
+                ):
+                    with tempfile.TemporaryDirectory() as temporary_directory:
+                        location = Path(temporary_directory)
+                        destination = location / project_name
+
+                        with ExitStack() as stack:
+                            folder_create = stack.enter_context(
+                                patch(
+                                    "builders.folder_builder."
+                                    "FolderBuilder.create"
+                                )
+                            )
+                            file_write = stack.enter_context(
+                                patch(
+                                    "builders.file_builder.FileBuilder.write"
+                                )
+                            )
+                            stage_calls = self._patch_generation_stages(stack)
+
+                            with self.assertRaises(ValueError):
+                                ProjectGenerator().create(
+                                    project_name=project_name,
+                                    location=str(location),
+                                    template_name=template_name,
+                                )
+
+                        self.assertFalse(destination.exists())
+                        self.assertEqual(tuple(location.iterdir()), ())
+                        folder_create.assert_not_called()
+                        file_write.assert_not_called()
+                        for stage_call in stage_calls:
+                            stage_call.assert_not_called()
+
+    def test_basic_accepts_names_without_usable_package_identifiers(
+        self,
+    ) -> None:
+        project_names = ("\u4f60\u597d", "\u65e5\u672c\u8a9e", "---", "___")
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            location = Path(temporary_directory)
+
+            for project_name in project_names:
+                with self.subTest(project_name=project_name):
+                    with ExitStack() as stack:
+                        self._patch_generation_stages(stack)
+                        stack.enter_context(redirect_stdout(StringIO()))
+                        ProjectGenerator().create(
+                            project_name=project_name,
+                            location=str(location),
+                            template_name="basic",
+                        )
+
+                    self.assertTrue(
+                        (location / project_name / "app.py").is_file()
+                    )
+
+    def test_package_normalization_preserves_supported_identifiers(self) -> None:
+        cases = {
+            "My Project": "my_project",
+            "my-project": "my_project",
+            "my_project": "my_project",
+            "Caf\u00e9 App": "caf_app",
+            "123 Project": "_123_project",
+        }
+
+        for project_name, expected in cases.items():
+            with self.subTest(project_name=project_name):
+                package_name = normalize_package_name(
+                    project_name,
+                    package_label="test",
+                )
+
+                self.assertEqual(package_name, expected)
+                self.assertTrue(package_name.isidentifier())
 
     def test_valid_templates_still_generate_their_owned_files(self) -> None:
         cases = {

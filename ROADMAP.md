@@ -263,6 +263,12 @@ Sprint 11.4 extends the one-segment destination rule with the supported Windows 
 
 Accepted human-readable display names remain unchanged. Library and CLI templates continue to derive their Python package identifiers through the existing separate normalization step; no general template escaping framework was added.
 
+### Sprint 11.5 — Template-specific package preflight
+
+Sprint 11.5 adds a harmless template preflight after destination validation and template lookup but before project-root creation. File-based templates preflight through their existing context construction, so library and CLI reuse the established package normalizer and reject display names that yield no usable ASCII Python identifier without filesystem, builder, or subprocess activity.
+
+The basic template retains the complete `ProjectConfig` display-name contract and has no package-specific restriction. Existing destination errors and unknown-template `KeyError` behavior remain authoritative in their established order.
+
 ## Planned — Stabilization Toward v1.0
 
 These are outcome-oriented priorities, not guaranteed feature commitments.
