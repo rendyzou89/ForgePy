@@ -20,7 +20,7 @@ class ListCommand(Command):
     summary = "List registered project templates."
     description = "List every project template currently registered in ForgePy."
 
-    def execute(self, args: Namespace) -> None:
+    def execute(self, args: Namespace) -> int:
         del args
 
         registry = TemplateRegistry()
@@ -32,7 +32,9 @@ class ListCommand(Command):
 
         if not template_metadata:
             print("Belum ada template yang terdaftar.")
-            return
+            return 0
 
         for metadata in template_metadata:
             print(f"- {metadata.name}: {metadata.description}")
+
+        return 0

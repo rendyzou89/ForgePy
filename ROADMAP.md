@@ -269,6 +269,12 @@ Sprint 11.5 adds a harmless template preflight after destination validation and 
 
 The basic template retains the complete `ProjectConfig` display-name contract and has no package-specific restriction. Existing destination errors and unknown-template `KeyError` behavior remain authoritative in their established order.
 
+### Sprint 11.6 — CLI error status and presentation
+
+Sprint 11.6 establishes the minimal CLI process contract: `0` for success, `1` for handled operational or user failures, and argparse's existing `2` for syntax or usage errors. Commands return integer statuses through `Dispatcher` to `main`, while create, configuration, and component commands translate their expected domain and operational failures into concise output without tracebacks.
+
+Library exception contracts remain at their owning boundaries, unexpected programming errors still surface, and no global exception hierarchy or error-management framework was added.
+
 ## Planned — Stabilization Toward v1.0
 
 These are outcome-oriented priorities, not guaranteed feature commitments.

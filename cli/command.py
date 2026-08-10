@@ -45,8 +45,8 @@ class Command(ABC):
         del parser
 
     @abstractmethod
-    def execute(self, args: Namespace) -> None:
+    def execute(self, args: Namespace) -> int:
         """
-        Menjalankan command.
+        Menjalankan command dan mengembalikan status proses CLI.
         """
         raise NotImplementedError

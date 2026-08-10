@@ -86,7 +86,7 @@ class ConfigCommand(Command):
             ),
         )
 
-    def execute(self, args: Namespace) -> None:
+    def execute(self, args: Namespace) -> int:
         action = getattr(
             args,
             "config_action",
@@ -108,14 +108,19 @@ class ConfigCommand(Command):
                     "[ERROR] Unknown ForgePy configuration action: "
                     f"'{action}'."
                 )
+                return 1
         except UnknownConfigSettingError as error:
             print(f"[ERROR] {error}")
             print(
                 "Supported settings: "
                 f"{self._supported_settings_text()}."
             )
+            return 1
         except ForgePyConfigError as error:
             print(f"[ERROR] {error}")
+            return 1
+
+        return 0
 
     def _show(self) -> None:
         config = self._get_store().load()

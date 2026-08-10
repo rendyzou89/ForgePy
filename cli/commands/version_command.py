@@ -21,8 +21,9 @@ class VersionCommand(Command):
     summary = "Show ForgePy and Python version information."
     description = "Show the configured ForgePy version and active Python version."
 
-    def execute(self, args: Namespace) -> None:
+    def execute(self, args: Namespace) -> int:
         del args
 
         print(f"{APP_NAME} v{VERSION}")
         print(f"Python {platform.python_version()}")
+        return 0

@@ -325,6 +325,27 @@ class ComponentCommandTests(unittest.TestCase):
         self.assertIn("[ERROR] Unknown ForgePy component: 'unknown'.", output)
         self.assertNotIn("Traceback", output)
 
+    def test_component_install_hook_key_error_propagates(self) -> None:
+        component = CliTestComponent(
+            name="broken-hook",
+            manifest=ComponentManifest(),
+        )
+        registry = ComponentRegistry()
+        registry.register(component)
+        command = ComponentCommand(registry=registry)
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            with patch.object(
+                component,
+                "install",
+                side_effect=KeyError("hook defect"),
+            ):
+                with self.assertRaisesRegex(KeyError, "hook defect"):
+                    command._add(
+                        component.name,
+                        Path(temporary_directory),
+                    )
+
     def test_component_add_rejects_invalid_project_path(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             missing_path = Path(temporary_directory) / "missing"
