@@ -535,7 +535,7 @@ class ComponentCommandTests(unittest.TestCase):
         )
 
     def test_forgepy_version_remains_unchanged(self) -> None:
-        self.assertEqual(VERSION, "0.6.0")
+        self.assertEqual(VERSION, "1.0.0rc1")
 
     @staticmethod
     def _run_cli(

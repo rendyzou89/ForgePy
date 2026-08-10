@@ -315,11 +315,25 @@ This repository workflow is separate from the minimal built-in `github-actions` 
 
 Sprint 12.4 replaces the empty root README with a public guide covering source and editable installation, verified CLI usage, built-in templates and components, configuration, the project-creation lifecycle, partial-project behavior, supported Windows and CPython environments, and contributor validation. It makes no PyPI availability, v1.0 release, license, or native Windows client-test claim.
 
-## In progress — Sprint 12.5 Release Metadata and Changelog
+## Completed — Sprint 12.5 Release Metadata and Changelog
 
 Sprint 12.5 links the distribution long description to `README.md`, adds verified GitHub project URLs, minimal search keywords, and a pre-stable Beta classifier, and introduces a concise `CHANGELOG.md`. The changelog keeps post-0.6.0 work under Unreleased and summarizes only the formally tagged `0.6.0` baseline as released history.
 
 ForgePy remains `0.6.0`. The maintainer selected the MIT License, recorded in the root `LICENSE` and modern SPDX package metadata without a legacy license classifier. Sprint 12.6 is the next release-candidate validation stage; Sprint 12.5 creates no tag, release, or publishing workflow.
+
+## In progress — Sprint 12.6 v1.0 Release Candidate
+
+Sprint 12.6 establishes `1.0.0rc1` as the canonical development version while
+the latest stable tag remains `v0.6.0`. Packaging continues to derive the
+version from `config.version.VERSION`; this RC is not final v1.0.0 and does not
+claim a tag, GitHub Release, or PyPI publication.
+
+The RC gate requires the full automated suite, compilation and source CLI
+checks, fresh artifact build and inspection, clean wheel installation,
+installed CLI probes outside the checkout, and temporary installed-wheel
+project generation with isolated Git configuration. Native Windows 10 and
+Windows 11 smoke checks remain separately recorded manual evidence; hosted
+`windows-latest` results do not prove either client edition.
 
 ## Planned — Stabilization Toward v1.0
 

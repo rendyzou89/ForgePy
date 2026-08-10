@@ -4,6 +4,13 @@ This changelog records release-facing changes without assigning versions or date
 
 ## Unreleased
 
+No changes recorded yet.
+
+## 1.0.0rc1
+
+This is the first ForgePy v1.0 release candidate, not the final v1.0.0
+release. It has not been published to PyPI.
+
 ### Added
 
 - Added the `library` and `cli` templates alongside the existing `basic` starter.
