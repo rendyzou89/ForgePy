@@ -491,6 +491,15 @@ of the initial staging set. A VS Code failure prevents Git from running, and a
 Git commit failure propagates before completion is reported; partial project
 files remain because the lifecycle provides no rollback.
 
+Project-generation subprocesses are bounded locally by their owners: virtual
+environment creation and each packaging-tool upgrade allow 300 seconds,
+requirements installation allows 900 seconds, and Git init/add/commit allow
+60/120/60 seconds. Each owner identifies its failed stage and re-raises the
+original `CalledProcessError` or `TimeoutExpired`; `CreateCommand` translates
+these into status `1`. Packaging-tool upgrades and requirements installation
+may require network access. A failure stops later stages but leaves the partial
+destination for the user to inspect or remove before retrying.
+
 The current implementation uses Windows executable paths such as `.venv/Scripts/python.exe` and `.venv/Scripts/pip.exe`.
 
 ## Known limitations and technical debt

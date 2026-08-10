@@ -42,6 +42,8 @@ The component foundation is exposed by the component CLI but remains independent
 
 The CLI uses three process-status outcomes: successful commands return `0`, handled operational or user failures return `1`, and argparse syntax or usage failures retain status `2`. Command handlers translate only expected boundary failures into concise `[ERROR]` output, the dispatcher propagates their integer status, and `main` exits with it; unexpected programming errors continue to surface.
 
+Every project-generation subprocess has a finite owner-specific timeout: 300 seconds for virtual-environment creation and each packaging-tool upgrade, 900 seconds for requirements installation, 60 seconds for Git initialization, 120 seconds for Git staging, and 60 seconds for the initial commit. Packaging upgrades and dependency installation may require network access. A timeout or non-zero exit identifies its stage, stops the remaining lifecycle, and returns CLI status `1`; the partial destination is retained and may be removed before retrying.
+
 ## Repository structure
 
 | Path | Current role |

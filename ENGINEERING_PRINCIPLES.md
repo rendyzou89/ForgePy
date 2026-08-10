@@ -47,6 +47,8 @@ The no-command interactive create flow, the `create`, `list`, `version`, and `co
 
 Environment creation, package installation, Git initialization, VS Code generation, and persistent configuration writes are observable side effects. New side effects must have clear ownership, failure behavior, and user-facing status.
 
+Project-generation subprocesses must use explicit finite timeouts owned near each lifecycle stage. Non-zero exits and timeouts propagate through the existing subprocess exception contract; do not add hidden retries or automatic cleanup of partial projects.
+
 ### Keep portability claims evidence-based
 
 The current implementation uses Windows virtual-environment executable paths. Do not claim broader platform support until paths and lifecycle behavior have been implemented and verified there.
