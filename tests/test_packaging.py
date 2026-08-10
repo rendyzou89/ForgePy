@@ -59,6 +59,10 @@ class PackagingMetadataTests(unittest.TestCase):
             },
         )
         self.assertIn(
+            "Development Status :: 5 - Production/Stable",
+            project["classifiers"],
+        )
+        self.assertNotIn(
             "Development Status :: 4 - Beta",
             project["classifiers"],
         )
@@ -90,8 +94,8 @@ class PackagingMetadataTests(unittest.TestCase):
 
         self.assertIn("# Changelog", changelog)
         self.assertIn("## Unreleased", changelog)
+        self.assertRegex(changelog, r"(?m)^## 1\.0\.0$")
         self.assertIn("## 1.0.0rc1", changelog)
-        self.assertNotRegex(changelog, r"(?m)^## 1\.0\.0$")
 
     def test_required_runtime_packages_are_discovered_exclusively(self) -> None:
         discovery = self.metadata["tool"]["setuptools"]["packages"]["find"]
@@ -117,7 +121,7 @@ class PackagingMetadataTests(unittest.TestCase):
             dynamic_version["version"]["attr"],
             "config.version.VERSION",
         )
-        self.assertEqual(VERSION, "1.0.0rc1")
+        self.assertEqual(VERSION, "1.0.0")
 
     def test_console_script_delegates_to_existing_main(self) -> None:
         self.assertEqual(

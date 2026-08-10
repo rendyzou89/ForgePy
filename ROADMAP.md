@@ -321,7 +321,7 @@ Sprint 12.5 links the distribution long description to `README.md`, adds verifie
 
 ForgePy remains `0.6.0`. The maintainer selected the MIT License, recorded in the root `LICENSE` and modern SPDX package metadata without a legacy license classifier. Sprint 12.6 is the next release-candidate validation stage; Sprint 12.5 creates no tag, release, or publishing workflow.
 
-## In progress — Sprint 12.6 v1.0 Release Candidate
+## Completed — Sprint 12.6 v1.0 Release Candidate
 
 Sprint 12.6 establishes `1.0.0rc1` as the canonical development version while
 the latest stable tag remains `v0.6.0`. Packaging continues to derive the
@@ -335,6 +335,20 @@ project generation with isolated Git configuration. Native Windows 10 and
 Windows 11 smoke checks remain separately recorded manual evidence; hosted
 `windows-latest` results do not prove either client edition.
 
+The `v1.0.0rc1` tag and GitHub prerelease were created after its Windows
+CPython 3.12-3.14 CI passed. Native Windows 11 25H2, fresh artifacts, isolated
+wheel installation, installed CLI, and installed-wheel project generation also
+passed. Windows 10 was not directly tested, and no PyPI publication occurred.
+
+## In progress — Sprint 12.7 Final v1.0.0 Promotion
+
+Sprint 12.7 promotes the validated RC to final version source `1.0.0` without
+new product behavior. Fresh final artifacts, isolated installation, installed
+CLI checks, and native Windows 11 25H2 installed-wheel project generation pass
+locally; PR CI remains pending. The final `v1.0.0` tag and GitHub Release do not
+yet exist, and PyPI publication remains a separate decision. Windows 10 has not
+been directly tested.
+
 ## Planned — Stabilization Toward v1.0
 
 These are outcome-oriented priorities, not guaranteed feature commitments.
@@ -344,7 +358,6 @@ These are outcome-oriented priorities, not guaranteed feature commitments.
 - Keep the canonical application version synchronized with release tags without duplicating it in module headers.
 - Keep the public README and project metadata aligned with validated behavior.
 - Keep the MIT License file and package metadata aligned through release validation.
-- Complete Sprint 12.6 release-candidate validation before proposing a final v1.0 release.
 
 ### Verification and Failure Behavior
 

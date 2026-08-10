@@ -6,6 +6,12 @@ This changelog records release-facing changes without assigning versions or date
 
 No changes recorded yet.
 
+## 1.0.0
+
+ForgePy 1.0.0 promotes the validated `1.0.0rc1` contents as the prepared
+stable release source without additional product changes. The final tag and
+GitHub Release have not yet been created, and no PyPI publication is claimed.
+
 ## 1.0.0rc1
 
 This is the first ForgePy v1.0 release candidate, not the final v1.0.0
