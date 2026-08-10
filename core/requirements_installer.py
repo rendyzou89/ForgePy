@@ -2,6 +2,9 @@ import subprocess
 from pathlib import Path
 
 
+REQUIREMENTS_INSTALL_TIMEOUT_SECONDS = 900
+
+
 class RequirementsInstaller:
     """
     Menginstal package dari requirements.txt
@@ -29,14 +32,19 @@ class RequirementsInstaller:
 
         print("\n[INFO] Menginstal dependencies...")
 
-        subprocess.run(
-            [
-                str(pip),
-                "install",
-                "-r",
-                str(requirements),
-            ],
-            check=True,
-        )
+        try:
+            subprocess.run(
+                [
+                    str(pip),
+                    "install",
+                    "-r",
+                    str(requirements),
+                ],
+                check=True,
+                timeout=REQUIREMENTS_INSTALL_TIMEOUT_SECONDS,
+            )
+        except subprocess.SubprocessError as error:
+            print(f"[ERROR] Requirements installation failed: {error}")
+            raise
 
         print("[OK] Dependencies berhasil di-install.")

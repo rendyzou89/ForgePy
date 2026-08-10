@@ -11,6 +11,9 @@ from pathlib import Path
 from builders.base_builder import BaseBuilder
 
 
+PACKAGE_TOOL_UPDATE_TIMEOUT_SECONDS = 300
+
+
 class PythonToolsBuilder(BaseBuilder):
     """
     Mengupdate pip, setuptools, dan wheel
@@ -38,16 +41,24 @@ class PythonToolsBuilder(BaseBuilder):
 
             print(f"[INFO] Mengupdate {package}...")
 
-            subprocess.run(
-                [
-                    str(python),
-                    "-m",
-                    "pip",
-                    "install",
-                    "--upgrade",
-                    package,
-                ],
-                check=True,
-            )
+            try:
+                subprocess.run(
+                    [
+                        str(python),
+                        "-m",
+                        "pip",
+                        "install",
+                        "--upgrade",
+                        package,
+                    ],
+                    check=True,
+                    timeout=PACKAGE_TOOL_UPDATE_TIMEOUT_SECONDS,
+                )
+            except subprocess.SubprocessError as error:
+                print(
+                    "[ERROR] Packaging-tool update failed for "
+                    f"'{package}': {error}"
+                )
+                raise
 
             print(f"[OK] {package} berhasil diupdate.")

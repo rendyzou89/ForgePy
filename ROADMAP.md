@@ -281,6 +281,12 @@ Sprint 11.7 moves VS Code generation before Git initialization, staging, and the
 
 Git and VS Code responsibilities remain separate, and partial projects remain possible because no rollback or transaction framework was added.
 
+### Sprint 11.8 — Bounded lifecycle subprocesses
+
+Sprint 11.8 adds explicit finite, stage-owned timeouts to virtual-environment creation, packaging-tool upgrades, requirements installation, and Git initialization, staging, and commit. Timeout and non-zero-exit failures retain Python's existing subprocess exceptions, identify the failed stage, stop later lifecycle work, and use the existing CLI status-`1` translation.
+
+Packaging upgrades and dependency installation may require network access. No retry, cache, rollback, generic subprocess wrapper, or cross-platform environment-path change was introduced; partial destinations remain available for inspection or removal before retrying.
+
 ## Planned — Stabilization Toward v1.0
 
 These are outcome-oriented priorities, not guaranteed feature commitments.
