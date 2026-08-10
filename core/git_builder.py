@@ -28,8 +28,9 @@ class GitBuilder:
     def create(self, project_root: Path) -> None:
 
         if shutil.which("git") is None:
-            print("[WARNING] Git tidak ditemukan.")
-            return
+            raise FileNotFoundError(
+                "Git executable is required but was not found."
+            )
 
         if (project_root / ".git").exists():
             print("[INFO] Git Repository sudah ada.")

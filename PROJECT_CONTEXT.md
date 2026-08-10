@@ -28,7 +28,7 @@ ForgePy favors understandable automation, explicit architectural boundaries, com
 - The `basic` template generates the configured folder layout and nine root files.
 - Create `.venv`, upgrade `pip`, `setuptools`, and `wheel`, and install generated requirements.
 - Generate four VS Code files matched to the selected template: `basic` targets `app.py`, `library` declares no application entry point, and `cli` targets its generated package `cli.py`.
-- After VS Code generation, initialize Git, stage all generated content, and attempt an initial commit; VS Code or Git failure prevents full-success reporting.
+- After VS Code generation, complete the required Git stage by initializing a repository, staging all generated content, and creating an initial commit; missing Git or any Git failure prevents full-success reporting.
 - Load, validate, update, reset, and atomically save user configuration at `~/.forgepy/config.json` through `ConfigStore`.
 - Show, set, and reset persistent values through `python main.py config` without duplicating storage logic in the CLI.
 - Resolve omitted create location and template values from `default_location` and `default_template`, after explicit CLI arguments and before the existing prompt/`basic` fallback.
@@ -43,6 +43,8 @@ The component foundation is exposed by the component CLI but remains independent
 The CLI uses three process-status outcomes: successful commands return `0`, handled operational or user failures return `1`, and argparse syntax or usage failures retain status `2`. Command handlers translate only expected boundary failures into concise `[ERROR]` output, the dispatcher propagates their integer status, and `main` exits with it; unexpected programming errors continue to surface.
 
 Every project-generation subprocess has a finite owner-specific timeout: 300 seconds for virtual-environment creation and each packaging-tool upgrade, 900 seconds for requirements installation, 60 seconds for Git initialization, 120 seconds for Git staging, and 60 seconds for the initial commit. Packaging upgrades and dependency installation may require network access. A timeout or non-zero exit identifies its stage, stops the remaining lifecycle, and returns CLI status `1`; the partial destination is retained and may be removed before retrying.
+
+A successful `create` includes successful Git initialization, staging, and initial commit. If the required Git executable is unavailable when the final lifecycle stage is reached, creation returns status `1` without full-success reporting; already-generated project artifacts remain for inspection or removal.
 
 ## Repository structure
 

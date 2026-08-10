@@ -66,7 +66,7 @@ ForgePy/
 | `core/project_generator.py` | Orchestrates the complete create workflow. |
 | `core/environment_builder.py` | Creates `.venv` with the running Python interpreter. |
 | `core/requirements_installer.py` | Installs the generated requirements with the new environment's `pip.exe`. |
-| `core/git_builder.py` | Initializes Git, stages files, and attempts the initial commit. |
+| `core/git_builder.py` | Requires Git, initializes the repository, stages files, and creates the required initial commit. |
 | `core/vscode_builder.py` | Renders and writes `.vscode` files for an explicit template entry-point requirement. |
 | `builders/` | Creates folders/files and upgrades Python packaging tools. |
 | `components/base_component.py` | Defines abstract component `name`, `metadata`, `manifest`, and minimal `install(context)` behavior. |
@@ -430,7 +430,7 @@ The generator then executes these stages in order:
 7. Upgrade `pip`, `setuptools`, and `wheel`.
 8. Install packages from `requirements.txt` when present and non-empty.
 9. Write Visual Studio Code configuration.
-10. Initialize Git, stage all generated content, and attempt an initial commit.
+10. Complete the required Git stage: initialize the repository, stage all generated content, and create the initial commit.
 11. Print the resulting project path.
 
 All destination checks and template lookup occur before the project root or template files are created. Existing destinations are never merged with ForgePy output. Unknown template names retain the registry's existing `KeyError` semantics without leaving an empty project root.
@@ -490,6 +490,12 @@ VS Code generation completes before Git initialization so `.vscode` is part
 of the initial staging set. A VS Code failure prevents Git from running, and a
 Git commit failure propagates before completion is reported; partial project
 files remain because the lifecycle provides no rollback.
+
+Git initialization, staging, and the initial commit are the required final
+stage of successful project creation. If the Git executable is unavailable,
+`GitBuilder` raises `FileNotFoundError`; the CLI reports an operational failure
+without full-success output, and the partial project remains available because
+the lifecycle performs no rollback.
 
 Project-generation subprocesses are bounded locally by their owners: virtual
 environment creation and each packaging-tool upgrade allow 300 seconds,

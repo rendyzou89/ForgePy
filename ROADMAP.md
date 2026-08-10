@@ -287,6 +287,12 @@ Sprint 11.8 adds explicit finite, stage-owned timeouts to virtual-environment cr
 
 Packaging upgrades and dependency installation may require network access. No retry, cache, rollback, generic subprocess wrapper, or cross-platform environment-path change was introduced; partial destinations remain available for inspection or removal before retrying.
 
+## Completed — Sprint 11.9 Required Git Creation Stage
+
+Sprint 11.9 defines Git initialization, staging, and the initial commit as the required final stage of successful project creation. An unavailable Git executable now raises `FileNotFoundError`, uses the existing CLI operational-failure translation and status `1`, and prevents full-success reporting.
+
+Git discovery remains owned by `GitBuilder` when its lifecycle stage is reached. Earlier generated artifacts remain because no early dependency discovery, rollback, cleanup, or new tool-management abstraction was introduced.
+
 ## Planned — Stabilization Toward v1.0
 
 These are outcome-oriented priorities, not guaranteed feature commitments.

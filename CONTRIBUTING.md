@@ -10,7 +10,7 @@ Prefer clear, focused automation; explicit module boundaries; visible side effec
 
 ForgePy currently uses only the Python standard library and has an empty root `requirements.txt`.
 
-Prerequisites are Git, Python with the standard-library `venv` module, and PowerShell for the commands below. The complete generation workflow currently assumes Windows executables under `.venv\Scripts`. The repository does not yet declare a supported Python version range for ForgePy itself.
+Prerequisites are Git, Python with the standard-library `venv` module, and PowerShell for the commands below. Git is required for project creation; if its executable is unavailable when the final Git stage is reached, creation fails and may leave an already-generated partial project. The complete generation workflow currently assumes Windows executables under `.venv\Scripts`. The repository does not yet declare a supported Python version range for ForgePy itself.
 
 Generated-project requirements are separate from ForgePy's empty root requirements file. The `basic` template declares `PySide6`, `pandas`, and `openpyxl`; the minimal `library` and `cli` templates write empty requirements files. A full create run still upgrades packaging tools, so it may require network access.
 

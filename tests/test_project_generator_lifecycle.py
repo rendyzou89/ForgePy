@@ -178,8 +178,60 @@ class ProjectGeneratorLifecycleTests(unittest.TestCase):
 
             self.assertNotIn("Project berhasil dibuat", output.getvalue())
 
+    def test_missing_git_preserves_partial_project_without_success(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            parent = Path(temporary_directory)
+            project_root = parent / "MissingGit"
+            output = StringIO()
+
+            with ExitStack() as stack:
+                stack.enter_context(
+                    patch("core.project_generator.EnvironmentBuilder.create")
+                )
+                stack.enter_context(
+                    patch("core.project_generator.PythonToolsBuilder.update")
+                )
+                stack.enter_context(
+                    patch(
+                        "core.project_generator.RequirementsInstaller.install"
+                    )
+                )
+                stack.enter_context(
+                    patch("core.git_builder.shutil.which", return_value=None)
+                )
+
+                with redirect_stdout(output):
+                    with self.assertRaisesRegex(
+                        FileNotFoundError,
+                        "Git executable is required",
+                    ):
+                        ProjectGenerator().create(
+                            project_name=project_root.name,
+                            location=str(parent),
+                            template_name="basic",
+                        )
+
+            self.assertTrue((project_root / "app.py").is_file())
+            self.assertTrue((project_root / ".vscode").is_dir())
+            self.assertNotIn("Project berhasil dibuat", output.getvalue())
+
 
 class GitBuilderFailureTests(unittest.TestCase):
+
+    def test_missing_git_is_reported_as_required_without_subprocess(self) -> None:
+        output = StringIO()
+
+        with patch("core.git_builder.shutil.which", return_value=None):
+            with patch("core.git_builder.subprocess.run") as run:
+                with redirect_stdout(output):
+                    with self.assertRaisesRegex(
+                        FileNotFoundError,
+                        "Git executable is required but was not found",
+                    ):
+                        GitBuilder().create(Path("project"))
+
+        run.assert_not_called()
+        self.assertNotIn("Git Repository berhasil dibuat", output.getvalue())
 
     def test_commit_failure_is_reported_and_propagated(self) -> None:
         failure = subprocess.CalledProcessError(1, ["git", "commit"])
