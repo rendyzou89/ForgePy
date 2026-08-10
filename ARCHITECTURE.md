@@ -512,11 +512,13 @@ these into status `1`. Packaging-tool upgrades and requirements installation
 may require network access. A failure stops later stages but leaves the partial
 destination for the user to inspect or remove before retrying.
 
-The current implementation uses Windows executable paths such as `.venv/Scripts/python.exe` and `.venv/Scripts/pip.exe`.
+ForgePy v1.0 officially supports Windows 10 and Windows 11 on CPython. Other operating systems are not officially supported in v1.0. The supported interpreter contract is CPython 3.12+ with no upper bound; versions 3.12, 3.13, and 3.14 are the required v1.0 validation targets. Linux, macOS, and alternative Python implementations remain unsupported and unverified.
+
+The current implementation uses Windows executable paths such as `.venv/Scripts/python.exe` and `.venv/Scripts/pip.exe`, Windows destination-name semantics, and Windows-specific virtual-environment paths in generated VS Code configuration. This explicit support contract does not add a runtime platform guard: metadata and documentation describe the supported environment, while non-Windows execution remains outside the v1.0 contract.
 
 ## Known limitations and technical debt
 
-- The full generation lifecycle assumes Windows `.venv/Scripts/*.exe` paths.
+- The full generation lifecycle is supported only on Windows 10 and Windows 11 and assumes Windows `.venv/Scripts/*.exe` paths; the Python 3.12-3.14 support claim still requires real interpreter-matrix validation before release.
 - Automated coverage includes component metadata and registry behavior, user configuration, create-input resolution, project-name and destination safety, template metadata and registry behavior, list output, shared template contracts, exact normalized template-owned file snapshots, all built-in structures, generated CLI subprocess behavior, template-aware VS Code behavior, and isolated selection through `ProjectGenerator`; the real external lifecycle and other application areas remain uncovered.
 - `author` and `license` are persisted but not applied to generated content.
 - `TemplateRegistry.get()` raises `KeyError` for unknown names rather than producing a command-level error.

@@ -99,6 +99,64 @@ class PackagingMetadataTests(unittest.TestCase):
     def test_distribution_declares_no_python_runtime_dependencies(self) -> None:
         self.assertEqual(self.metadata["project"]["dependencies"], [])
 
+    def test_support_metadata_declares_the_python_contract(self) -> None:
+        project = self.metadata["project"]
+
+        self.assertEqual(project["requires-python"], ">=3.12")
+        self.assertNotIn(",", project["requires-python"])
+        self.assertTrue(
+            {
+                "Programming Language :: Python :: 3",
+                "Programming Language :: Python :: 3 :: Only",
+                "Programming Language :: Python :: 3.12",
+                "Programming Language :: Python :: 3.13",
+                "Programming Language :: Python :: 3.14",
+                "Programming Language :: Python :: Implementation :: CPython",
+            }.issubset(project["classifiers"])
+        )
+
+    def test_support_metadata_declares_only_windows(self) -> None:
+        project = self.metadata["project"]
+        classifiers = project["classifiers"]
+
+        self.assertIn("Operating System :: Microsoft :: Windows", classifiers)
+        self.assertFalse(
+            any(
+                "MacOS" in classifier or "POSIX :: Linux" in classifier
+                for classifier in classifiers
+            )
+        )
+        self.assertNotIn("license", project)
+        self.assertFalse(
+            any(
+                classifier.startswith("License ::")
+                for classifier in classifiers
+            )
+        )
+
+    def test_support_documentation_matches_packaging_metadata(self) -> None:
+        for document_name in (
+            "ARCHITECTURE.md",
+            "PROJECT_CONTEXT.md",
+            "CONTRIBUTING.md",
+        ):
+            with self.subTest(document=document_name):
+                document = (self.project_root / document_name).read_text(
+                    encoding="utf-8"
+                )
+                normalized_document = document.casefold()
+
+                self.assertIn("officially supports windows", normalized_document)
+                self.assertIn("cpython 3.12+", normalized_document)
+                for python_version in ("3.12", "3.13", "3.14"):
+                    self.assertIn(python_version, normalized_document)
+                for unsupported_platform in ("linux", "macos"):
+                    self.assertIn(unsupported_platform, normalized_document)
+                self.assertTrue(
+                    "unsupported" in normalized_document
+                    or "unverified" in normalized_document
+                )
+
     def test_sdist_manifest_excludes_only_repository_packages(self) -> None:
         directives = self.manifest_path.read_text(
             encoding="utf-8"

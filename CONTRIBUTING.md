@@ -10,7 +10,7 @@ Prefer clear, focused automation; explicit module boundaries; visible side effec
 
 ForgePy currently uses only the Python standard library and has an empty root `requirements.txt`.
 
-Prerequisites are Git, Python with the standard-library `venv` module, and PowerShell for the commands below. Git is required for project creation; if its executable is unavailable when the final Git stage is reached, creation fails and may leave an already-generated partial project. The complete generation workflow currently assumes Windows executables under `.venv\Scripts`. The repository does not yet declare a supported Python version range for ForgePy itself.
+Prerequisites are Git, CPython 3.12+ with the standard-library `venv` module, and PowerShell for the commands below. Git is required for project creation; if its executable is unavailable when the final Git stage is reached, creation fails and may leave an already-generated partial project. ForgePy v1.0 officially supports Windows 10 and Windows 11 on CPython. Other operating systems are not officially supported in v1.0. Linux, macOS, and alternative Python implementations remain unsupported and unverified. CPython 3.12, 3.13, and 3.14 are the required v1.0 validation targets.
 
 Generated-project requirements are separate from ForgePy's empty root requirements file. The `basic` template declares `PySide6`, `pandas`, and `openpyxl`; the minimal `library` and `cli` templates write empty requirements files. A full create run still upgrades packaging tools, so it may require network access.
 
@@ -30,6 +30,8 @@ runtime dependencies. Repository licensing and the final user README remain
 separate release-readiness decisions.
 
 The implementation and generated VS Code configuration currently assume Windows-style virtual-environment paths.
+
+Before the support claim becomes release-final, CI must run on `windows-latest` for CPython 3.12, 3.13, and 3.14. Every matrix entry must run the full unit suite, `compileall`, and packaging/support tests. The Python 3.12 job must also build and inspect the wheel and sdist, install the wheel in an isolated environment, run the installed `forgepy --help`, `forgepy version`, `forgepy list`, and `forgepy component list` commands, verify the expected ForgePy version, and verify that tests and `utils` remain absent from the distribution artifacts. Local success on a single interpreter is not evidence for the complete matrix.
 
 ## Coding style
 
