@@ -64,7 +64,7 @@ A successful `create` includes successful Git initialization, staging, and initi
 | `tests/` | Standard-library tests for component and template metadata/registries, configuration, create resolution, list output, template architecture and output snapshots, built-in structures, and VS Code compatibility. |
 | `main.py` | Executable application entry point. |
 
-The root `README.md` and `requirements.txt` are currently empty.
+The root `README.md` is the public installation and usage guide. The root `requirements.txt` remains empty because ForgePy has no third-party runtime dependencies.
 
 ## Technical constraints
 
@@ -75,7 +75,7 @@ The root `README.md` and `requirements.txt` are currently empty.
 - Template metadata versioning has no release policy yet. The `basic` metadata records `0.6.0`, while `library` and `cli` start at `0.1.0`; these are independent from the ForgePy application and generated-project versions.
 - Subprocess failures generally propagate because commands use `check=True`.
 - Project generation rejects names that are unsafe for current generated Python/TOML strings or the supported Windows filename contract, including leading ASCII spaces and ordinary or superscript-digit reserved device stems, as well as existing targets, before template lookup or root creation. Accepted display names are preserved, while library and CLI package names remain separately normalized and preflighted after lookup but before root creation. Friendly CLI translation remains separate work.
-- The root packaging metadata requires CPython `>=3.12` and advertises Python 3.12, 3.13, and 3.14 on Windows. Local validation on one interpreter does not replace the required matrix validation.
+- The root packaging metadata requires CPython `>=3.12` and advertises Python 3.12, 3.13, and 3.14 on Windows. The repository CI matrix passes on all three interpreters; local validation on one interpreter remains narrower evidence.
 - `ComponentRegistry` is in-memory, installation-state-agnostic, and resolution-agnostic; it registers `pytest`, `ruff`, then `github-actions` by default. `ComponentInstaller` coordinates explicit project context, state, direct validation, one hook, and post-success state recording without moving those responsibilities. `component add` delegates to that installer, while `component installed --project PATH` reads the project-local store without registry filtering or filesystem inference. The component system provides no discovery, transitive resolution, installation ordering, rollback, uninstall, local package installation, template association, or generation integration.
 - `config.default_structure.DEFAULT_FILES` is defined but unused. `BasicFiles`, `LibraryFiles`, and `CliFiles` own their complete mappings and call `TemplateManager` directly for rendered content; `TemplateFiles.basic()` remains a compatibility facade.
 
@@ -85,7 +85,7 @@ The root `README.md` and `requirements.txt` are currently empty.
 - Keep further templates beyond `basic`, `library`, and `cli` subject to separate approval and compatibility review.
 - Keep persisted `author` and `license` values, and the configuration store itself, out of core generation and templates until a separate requirement explicitly defines that integration.
 - Continue expanding automated coverage across supported commands, lifecycle stages, and failure handling.
-- Observe successful repository workflow runs on `windows-latest` with CPython 3.12, 3.13, and 3.14 before making the v1.0 claim release-final. The workflow runs the full unit suite, `compileall`, and packaging/support tests in every job; Python 3.12 also validates the built artifacts and installed CLI. GitHub runner success does not literally prove Windows 10 and Windows 11 client behavior, so native client smoke validation may remain a release-stage manual check.
+- Keep the passing repository workflow green on `windows-latest` with CPython 3.12, 3.13, and 3.14. Every job runs the full unit suite, `compileall`, and packaging/support tests; Python 3.12 also validates the built artifacts and installed CLI. GitHub runner success does not literally prove Windows 10 and Windows 11 client behavior, so native client smoke validation may remain a release-stage manual check.
 
 ## Long-term v1.0 direction
 
@@ -104,7 +104,7 @@ Use this section as the handoff point for a new developer or AI session.
 | Implemented templates | `basic`, `library`, and `cli`, all with descriptive metadata |
 | Component state | Registry with `pytest`, `ruff`, and `github-actions` built-ins, project-local installed names, direct validation, and shared library/CLI orchestration; no generation integration |
 | Version source | `config/version.py`, aligned with the `v0.6.0` release tag |
-| Verification state | Repository CI defines a Windows CPython 3.12-3.14 matrix with Python 3.12 artifact/install checks; actual GitHub runs remain required. Local `unittest` coverage includes CI structure, packaging, components, templates, configuration, CLI, and lifecycle boundaries. |
+| Verification state | Repository CI passes on Windows runners with CPython 3.12-3.14 and Python 3.12 artifact/install checks. Local `unittest` coverage includes CI structure, packaging, components, templates, configuration, CLI, and lifecycle boundaries. |
 
 To resume work:
 
