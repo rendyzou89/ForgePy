@@ -311,6 +311,16 @@ Sprint 12.3 adds ForgePy's repository-level GitHub Actions workflow on `windows-
 
 This repository workflow is separate from the minimal built-in `github-actions` component generated into user projects. The CPython 3.12, 3.13, and 3.14 jobs pass, including Python 3.12 artifact and installed-CLI validation. GitHub's hosted Windows runner validates runner compatibility rather than literally proving both Windows 10 and Windows 11 client editions.
 
+## Completed — Sprint 12.4 Public README
+
+Sprint 12.4 replaces the empty root README with a public guide covering source and editable installation, verified CLI usage, built-in templates and components, configuration, the project-creation lifecycle, partial-project behavior, supported Windows and CPython environments, and contributor validation. It makes no PyPI availability, v1.0 release, license, or native Windows client-test claim.
+
+## In progress — Sprint 12.5 Release Metadata and Changelog
+
+Sprint 12.5 links the distribution long description to `README.md`, adds verified GitHub project URLs, minimal search keywords, and a pre-stable Beta classifier, and introduces a concise `CHANGELOG.md`. The changelog keeps post-0.6.0 work under Unreleased and summarizes only the formally tagged `0.6.0` baseline as released history.
+
+ForgePy remains `0.6.0`. The maintainer selected the MIT License, recorded in the root `LICENSE` and modern SPDX package metadata without a legacy license classifier. Sprint 12.6 is the next release-candidate validation stage; Sprint 12.5 creates no tag, release, or publishing workflow.
+
 ## Planned — Stabilization Toward v1.0
 
 These are outcome-oriented priorities, not guaranteed feature commitments.
@@ -319,6 +329,8 @@ These are outcome-oriented priorities, not guaranteed feature commitments.
 
 - Keep the canonical application version synchronized with release tags without duplicating it in module headers.
 - Keep the public README and project metadata aligned with validated behavior.
+- Keep the MIT License file and package metadata aligned through release validation.
+- Complete Sprint 12.6 release-candidate validation before proposing a final v1.0 release.
 
 ### Verification and Failure Behavior
 

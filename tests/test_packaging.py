@@ -16,6 +16,8 @@ class PackagingMetadataTests(unittest.TestCase):
     project_root = Path(__file__).resolve().parents[1]
     pyproject_path = project_root / "pyproject.toml"
     manifest_path = project_root / "MANIFEST.in"
+    changelog_path = project_root / "CHANGELOG.md"
+    license_path = project_root / "LICENSE"
     required_packages = (
         "builders",
         "cli",
@@ -33,11 +35,61 @@ class PackagingMetadataTests(unittest.TestCase):
         )
 
     def test_packaging_metadata_is_parseable_and_standard(self) -> None:
+        project = self.metadata["project"]
+
         self.assertEqual(
             self.metadata["build-system"]["build-backend"],
             "setuptools.build_meta",
         )
-        self.assertEqual(self.metadata["project"]["name"], "forgepy")
+        self.assertEqual(project["name"], "forgepy")
+        self.assertEqual(
+            project["readme"],
+            {"file": "README.md", "content-type": "text/markdown"},
+        )
+
+    def test_release_metadata_uses_verified_repository_facts(self) -> None:
+        project = self.metadata["project"]
+
+        self.assertEqual(
+            project["urls"],
+            {
+                "Homepage": "https://github.com/rendyzou89/ForgePy",
+                "Repository": "https://github.com/rendyzou89/ForgePy",
+                "Issues": "https://github.com/rendyzou89/ForgePy/issues",
+            },
+        )
+        self.assertIn(
+            "Development Status :: 4 - Beta",
+            project["classifiers"],
+        )
+        self.assertEqual(project["license"], "MIT")
+        self.assertEqual(project["license-files"], ["LICENSE"])
+        self.assertFalse(
+            any(
+                classifier.startswith("License ::")
+                for classifier in project["classifiers"]
+            )
+        )
+
+    def test_repository_license_is_the_maintainer_selected_mit_license(
+        self,
+    ) -> None:
+        license_text = self.license_path.read_text(encoding="utf-8")
+
+        self.assertTrue(self.license_path.is_file())
+        self.assertTrue(license_text.startswith("MIT License\n"))
+        self.assertIn("Copyright (c) 2026 Rendy Zou", license_text)
+        self.assertIn(
+            "Permission is hereby granted, free of charge",
+            license_text,
+        )
+        self.assertIn('THE SOFTWARE IS PROVIDED "AS IS"', license_text)
+
+    def test_changelog_has_an_unreleased_release_section(self) -> None:
+        changelog = self.changelog_path.read_text(encoding="utf-8")
+
+        self.assertIn("# Changelog", changelog)
+        self.assertIn("## Unreleased", changelog)
 
     def test_required_runtime_packages_are_discovered_exclusively(self) -> None:
         discovery = self.metadata["tool"]["setuptools"]["packages"]["find"]
@@ -126,7 +178,8 @@ class PackagingMetadataTests(unittest.TestCase):
                 for classifier in classifiers
             )
         )
-        self.assertNotIn("license", project)
+        self.assertEqual(project["license"], "MIT")
+        self.assertEqual(project["license-files"], ["LICENSE"])
         self.assertFalse(
             any(
                 classifier.startswith("License ::")
@@ -162,9 +215,13 @@ class PackagingMetadataTests(unittest.TestCase):
             encoding="utf-8"
         ).splitlines()
 
-        self.assertEqual(directives, ["prune tests", "prune utils"])
+        self.assertEqual(
+            directives,
+            ["include CHANGELOG.md", "prune tests", "prune utils"],
+        )
         self.assertTrue((self.project_root / "main.py").is_file())
         self.assertTrue(self.pyproject_path.is_file())
+        self.assertTrue(self.changelog_path.is_file())
 
         for package in self.required_packages:
             with self.subTest(package=package):
