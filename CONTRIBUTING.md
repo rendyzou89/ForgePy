@@ -28,6 +28,9 @@ The editable install uses the root `pyproject.toml`, exposes the existing
 metadata from `config/version.py`. ForgePy declares no third-party Python
 runtime dependencies and is licensed under the root MIT License.
 
+The Python distribution is named `forgepy-cli`; the application brand remains
+ForgePy and the installed command remains `forgepy`.
+
 Release-facing metadata uses `README.md` as the distribution long description,
 and `CHANGELOG.md` records Unreleased work plus only formally tagged history.
 Package license metadata uses the SPDX expression `MIT` and distributes the
@@ -39,6 +42,14 @@ The implementation and generated VS Code configuration currently assume Windows-
 Repository CI is defined in `.github/workflows/ci.yml` and targets `windows-latest` with CPython 3.12, 3.13, and 3.14. Every matrix entry runs the full unit suite, `compileall`, and packaging/support tests. The Python 3.12 job also builds and inspects the wheel and sdist, installs the wheel in an isolated environment, runs the installed `forgepy --help`, `forgepy version`, `forgepy list`, and `forgepy component list` commands from outside the checkout, verifies the expected ForgePy version, and verifies that tests and `utils` remain absent from the distribution artifacts.
 
 The CPython 3.12, 3.13, and 3.14 matrix currently passes and must remain green as the project approaches v1.0. The hosted `windows-latest` runner validates Windows runner compatibility but does not literally prove both Windows 10 and Windows 11 client editions; native client smoke validation may remain a release-stage manual check. This repository workflow is intentionally richer than the independent `github-actions` component generated into user projects.
+
+PyPI publishing is defined separately in `.github/workflows/publish.yml`. It
+builds fresh distributions, transfers them through a workflow artifact, and
+publishes from a job bound to the GitHub environment `pypi` using OIDC Trusted
+Publishing. The pending publisher is scoped to owner `rzou89`, repository
+`ForgePy`, workflow `publish.yml`, and environment `pypi`. Do not configure a
+PyPI API-token secret. Repository environment protection, including an optional
+required maintainer review, may be used to gate publication.
 
 ## Coding style
 

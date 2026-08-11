@@ -41,7 +41,7 @@ class PackagingMetadataTests(unittest.TestCase):
             self.metadata["build-system"]["build-backend"],
             "setuptools.build_meta",
         )
-        self.assertEqual(project["name"], "forgepy")
+        self.assertEqual(project["name"], "forgepy-cli")
         self.assertEqual(
             project["readme"],
             {"file": "README.md", "content-type": "text/markdown"},
@@ -53,9 +53,9 @@ class PackagingMetadataTests(unittest.TestCase):
         self.assertEqual(
             project["urls"],
             {
-                "Homepage": "https://github.com/rendyzou89/ForgePy",
-                "Repository": "https://github.com/rendyzou89/ForgePy",
-                "Issues": "https://github.com/rendyzou89/ForgePy/issues",
+                "Homepage": "https://github.com/rzou89/ForgePy",
+                "Repository": "https://github.com/rzou89/ForgePy",
+                "Issues": "https://github.com/rzou89/ForgePy/issues",
             },
         )
         self.assertIn(

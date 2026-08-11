@@ -8,7 +8,7 @@ ForgePy is a layered command-line application. The CLI parses user input and sel
 
 ```text
 ForgePy/
-|-- .github/workflows/ci.yml Repository Windows/CPython validation workflow
+|-- .github/workflows/       Repository CI and PyPI publishing workflows
 |-- builders/                 Reusable file-system and Python-tool builders
 |-- cli/                      Argument parsing, dispatch, and command objects
 |   `-- commands/             Implementations and the shared command catalog
@@ -56,6 +56,7 @@ ForgePy/
 | Area | Responsibility |
 | --- | --- |
 | `.github/workflows/ci.yml` | Runs ForgePy's repository test matrix and Python 3.12 distribution validation; it is separate from generated component output. |
+| `.github/workflows/publish.yml` | Builds fresh distributions and publishes only its uploaded artifact through PyPI Trusted Publishing. |
 | `main.py` | Connects `Parser` to `Dispatcher`. |
 | `cli/parser.py` | Defines CLI syntax, defaults, and subcommands. |
 | `cli/command.py` | Defines command metadata, parser configuration, and execution contracts. |
@@ -123,21 +124,32 @@ ForgePy/
 
 Versions rendered into generated projects, template metadata versions, and version fields required by VS Code JSON schemas are independent of the ForgePy release version. The `basic` metadata records `0.6.0`, while `library` and `cli` start at `0.1.0` as independent template revisions; this does not make `config/version.py` a template-version source.
 
-The root `pyproject.toml` uses setuptools to discover only the runtime package
-families and exposes `forgepy = main:main` as the installed console command.
+The root `pyproject.toml` names the Python distribution `forgepy-cli`, uses
+setuptools to discover only the runtime package families, and exposes
+`forgepy = main:main` as the installed console command. The application and CLI
+identity remain ForgePy and `forgepy`; the distribution name affects package
+installation and metadata only.
 Its distribution version is read dynamically from `config.version.VERSION`,
 its Markdown long description comes from `README.md`, and its verified project
-URLs point to the ForgePy GitHub repository and issue tracker. It declares no
+URLs point to `rzou89/ForgePy` and its issue tracker. It declares no
 third-party Python runtime dependencies or non-Python package data. Release
 metadata classifies the prepared `1.0.0` release as
 `Development Status :: 5 - Production/Stable`; repository licensing
 uses the SPDX expression `MIT` and includes the root `LICENSE` file through
 PEP 639 metadata. No legacy license classifier is used.
 
-The current application version is `1.0.0`, prepared as the final release
-source after validation of `1.0.0rc1`. It remains dynamically sourced from
-`config.version.VERSION`; the source version does not imply that the final Git
-tag, GitHub Release, or a PyPI publication already exists.
+The current application version is `1.0.0`, and the `v1.0.0` Git tag and GitHub
+Release exist. The version remains dynamically sourced from
+`config.version.VERSION`. The first `forgepy-cli` PyPI upload is still pending.
+
+`.github/workflows/publish.yml` builds a fresh wheel and sdist in an unprivileged
+job, transfers only those files as a workflow artifact, and publishes them in a
+separate `pypi` environment through GitHub OIDC and the official PyPA action.
+The publisher identity is `rzou89/ForgePy`, workflow `publish.yml`, environment
+`pypi`. It stores no PyPI username, password, API token, or repository secret.
+Future GitHub Releases trigger on publication; `workflow_dispatch` provides the
+deliberate first-publication path because the existing v1.0.0 event cannot be
+replayed by adding a workflow later.
 
 ## Release-Candidate Validation
 

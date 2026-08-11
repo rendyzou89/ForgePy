@@ -5,10 +5,10 @@
 - **Name:** ForgePy
 - **Purpose:** generate a structured starter Python project from a CLI, then prepare its virtual environment, dependencies, Git repository, and VS Code configuration.
 - **Protected stable branch policy:** treat `master` as protected and stable
-- **Current stable release/tag:** `v0.6.0` (`Sprint 6 Stable`)
-- **Current development area:** Sprint 12.7, preparing the final `1.0.0` source for release validation.
+- **Current stable release/tag:** `v1.0.0`
+- **Current development area:** Sprint 12.8, preparing the first PyPI publication.
 
-`config/version.py` is the canonical ForgePy version source and reports `1.0.0`. The validated `v1.0.0rc1` tag and GitHub prerelease exist; the final `v1.0.0` tag, final GitHub Release, and PyPI publication do not.
+`config/version.py` is the canonical ForgePy version source and reports `1.0.0`. The `v1.0.0` tag and GitHub stable release exist. PyPI publication under the prepared distribution name `forgepy-cli` is pending.
 
 ## ForgePy Philosophy
 
@@ -16,10 +16,11 @@ ForgePy favors understandable automation, explicit architectural boundaries, com
 
 ## Implemented capabilities
 
-- Publish release-facing package metadata from `pyproject.toml`, including the README long description, verified repository URLs, keywords, a Production/Stable classifier for the prepared `1.0.0` source, and the maintainer-selected MIT License through PEP 639 metadata.
+- Publish release-facing `forgepy-cli` package metadata from `pyproject.toml`, including the README long description, `rzou89/ForgePy` URLs, keywords, a Production/Stable classifier, and the maintainer-selected MIT License through PEP 639 metadata.
 - Derive the prepared `1.0.0` distribution version dynamically from the canonical application version source.
 - Define repository CI on `windows-latest` for CPython 3.12, 3.13, and 3.14, including mandatory Python 3.12 distribution inspection, isolated wheel installation, and installed CLI probes.
-- Install ForgePy through standards-based setuptools metadata and expose the existing `main:main` CLI flow as the `forgepy` console command.
+- Install the `forgepy-cli` distribution through standards-based setuptools metadata and expose the existing `main:main` CLI flow as the `forgepy` console command. The application remains branded ForgePy.
+- Build and publish fresh distributions through `.github/workflows/publish.yml`, with separate build/publish jobs and GitHub OIDC Trusted Publishing bound to `rzou89/ForgePy`, the `pypi` environment, and no stored PyPI credential. The upload remains pending.
 - Parse and dispatch `create`, `list`, `version`, and `config` commands through one shared catalog.
 - Fall back to an interactive create workflow when no command is supplied.
 - Register the `basic`, `library`, and `cli` project templates through one validated registration path with immutable metadata.
@@ -55,6 +56,7 @@ A successful `create` includes successful Git initialization, staging, and initi
 | Path | Current role |
 | --- | --- |
 | `.github/workflows/ci.yml` | Repository-only Windows/CPython matrix and distribution validation. |
+| `.github/workflows/publish.yml` | Release-published and manually dispatched PyPI Trusted Publishing with separate build and publish jobs. |
 | `CHANGELOG.md` | Release-facing Unreleased changes, prepared `1.0.0` contents, `1.0.0rc1` prerelease history, and the tagged `0.6.0` historical baseline. |
 | `builders/` | Folder/file creation and packaging-tool updates. |
 | `cli/` | Parser, dispatcher, command contract, and commands. |
@@ -90,7 +92,7 @@ The root `README.md` is the public installation and usage guide. The root `requi
 - Continue expanding automated coverage across supported commands, lifecycle stages, and failure handling.
 - Keep the passing repository workflow green on `windows-latest` with CPython 3.12, 3.13, and 3.14. Every job runs the full unit suite, `compileall`, and packaging/support tests; Python 3.12 also validates the built artifacts and installed CLI. GitHub runner success does not literally prove Windows 10 and Windows 11 client behavior, so native client smoke validation may remain a release-stage manual check.
 - Keep the root MIT License, SPDX package metadata, and distributed license file aligned.
-- Complete final `1.0.0` artifact, isolated-installation, installed-CLI, temporary project-generation, PR CI, and native Windows validation before requesting authorization for the final tag and GitHub Release.
+- Review and merge the PyPI preparation, create/protect the GitHub `pypi` environment, then deliberately dispatch `publish.yml` from `master` for the first upload.
 
 ## Long-term v1.0 direction
 
@@ -102,14 +104,15 @@ Use this section as the handoff point for a new developer or AI session.
 
 | Item | Resume state |
 | --- | --- |
-| Stable baseline | `v0.6.0` (`Sprint 6 Stable`) |
+| Stable baseline | `v1.0.0` Git tag and GitHub Release |
 | Current branch policy | Repository policy treats `master` as protected; use a feature branch for implementation |
-| Active development area | Sprint 12.7 preparation and validation of the final `1.0.0` source |
+| Active development area | Sprint 12.8 first-PyPI-publication preparation |
 | Implemented CLI | `create`, `list`, `version`, `config show/set/reset`, `component list/installed/add`, plus no-command interactive create |
 | Implemented templates | `basic`, `library`, and `cli`, all with descriptive metadata |
 | Component state | Registry with `pytest`, `ruff`, and `github-actions` built-ins, project-local installed names, direct validation, and shared library/CLI orchestration; no generation integration |
-| Version source | `config/version.py`, currently `1.0.0`; `v1.0.0rc1` exists, while the final `v1.0.0` tag does not |
-| Verification state | RC CI and native Windows 11 25H2 validation passed. Fresh final `1.0.0` artifacts, isolated installation, installed CLI, and native Windows 11 final-wheel E2E also pass locally; the final patch still requires its PR CI matrix run. Windows 10 has not been directly tested. |
+| Distribution identity | PyPI name `forgepy-cli`; application ForgePy; console command `forgepy` |
+| Version source | `config/version.py`, currently `1.0.0`; final `v1.0.0` tag and GitHub Release exist |
+| Publishing state | Pending publisher expects `rzou89/ForgePy`, `publish.yml`, environment `pypi`; no PyPI upload has occurred |
 
 To resume work:
 
