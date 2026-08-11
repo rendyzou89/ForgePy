@@ -90,5 +90,82 @@ class RepositoryCIContractTests(unittest.TestCase):
                 self.assertIn(command, self.workflow)
 
 
+class PublishWorkflowContractTests(unittest.TestCase):
+
+    project_root = Path(__file__).resolve().parents[1]
+    workflow_path = (
+        project_root / ".github" / "workflows" / "publish.yml"
+    )
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.workflow = cls.workflow_path.read_text(encoding="utf-8")
+        cls.normalized_workflow = cls.workflow.casefold()
+
+    def test_publish_workflow_exists_with_intentional_triggers(self) -> None:
+        self.assertTrue(self.workflow_path.is_file())
+        self.assertRegex(
+            self.workflow,
+            re.compile(r"release:\s+types:\s+- published", re.MULTILINE),
+        )
+        self.assertRegex(
+            self.workflow,
+            re.compile(r"workflow_dispatch:\s*$", re.MULTILINE),
+        )
+        self.assertNotRegex(
+            self.workflow,
+            re.compile(r"^\s*push:", re.MULTILINE),
+        )
+        self.assertNotRegex(
+            self.workflow,
+            re.compile(r"^\s*pull_request:", re.MULTILINE),
+        )
+
+    def test_manual_publish_build_is_restricted_to_master(self) -> None:
+        self.assertIn(
+            "if: github.event_name == 'release' || "
+            "github.ref == 'refs/heads/master'",
+            self.workflow,
+        )
+        self.assertIn("workflow_dispatch:", self.workflow)
+        self.assertIn("github.event_name == 'release'", self.workflow)
+        self.assertIn("github.ref == 'refs/heads/master'", self.workflow)
+
+    def test_publish_job_uses_pypi_environment_and_oidc(self) -> None:
+        self.assertRegex(
+            self.workflow,
+            re.compile(r"environment:\s+name: pypi", re.MULTILINE),
+        )
+        self.assertIn("id-token: write", self.workflow)
+        self.assertIn(
+            "uses: pypa/gh-action-pypi-publish@release/v1",
+            self.workflow,
+        )
+
+    def test_build_artifacts_are_passed_to_publish_job(self) -> None:
+        self.assertIn("run: python -m build", self.workflow)
+        self.assertIn("uses: actions/upload-artifact@v4", self.workflow)
+        self.assertIn("uses: actions/download-artifact@v5", self.workflow)
+        self.assertGreaterEqual(
+            self.workflow.count("name: python-distributions"),
+            2,
+        )
+        self.assertRegex(
+            self.workflow,
+            re.compile(r"publish:\s+.*?needs: build", re.DOTALL),
+        )
+
+    def test_workflow_references_no_stored_pypi_credentials(self) -> None:
+        for forbidden in (
+            "secrets.",
+            "api_token",
+            "api-token",
+            "password:",
+            "username:",
+        ):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, self.normalized_workflow)
+
+
 if __name__ == "__main__":
     unittest.main()

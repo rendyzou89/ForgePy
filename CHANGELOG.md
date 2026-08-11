@@ -4,13 +4,19 @@ This changelog records release-facing changes without assigning versions or date
 
 ## Unreleased
 
-No changes recorded yet.
+### Changed
+
+- Prepared the first PyPI publication under the `forgepy-cli` distribution
+  name while preserving the ForgePy application name, `forgepy` command, and
+  canonical version `1.0.0`.
+- Updated current project URLs for `rzou89/ForgePy` and added a GitHub OIDC
+  Trusted Publishing workflow. No PyPI publication has occurred.
 
 ## 1.0.0
 
-ForgePy 1.0.0 promotes the validated `1.0.0rc1` contents as the prepared
-stable release source without additional product changes. The final tag and
-GitHub Release have not yet been created, and no PyPI publication is claimed.
+ForgePy 1.0.0 promotes the validated `1.0.0rc1` contents as the stable release
+without additional product changes. The `v1.0.0` tag and GitHub Release exist;
+no PyPI publication is claimed.
 
 ## 1.0.0rc1
 

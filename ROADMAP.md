@@ -11,9 +11,10 @@ This roadmap separates shipped work, active development, planned stabilization, 
 | Planned | A high-level readiness outcome inferred from documented gaps; scope still requires approval. |
 | Idea | Exploratory only; not approved or scheduled. |
 
-## Implemented — Stable Baseline Through v0.6.0
+## Implemented — Stable Baseline Through v1.0.0
 
-The latest stable tag is `v0.6.0` (`Sprint 6 Stable`).
+The latest stable tag is `v1.0.0`; the v0.6.0 Sprint 6 baseline remains part of
+the repository's historical milestone evidence.
 
 ### Milestone Evidence
 
@@ -21,6 +22,7 @@ The latest stable tag is `v0.6.0` (`Sprint 6 Stable`).
 | --- | --- |
 | Modular generator foundation | Commit `0697387` has the subject `v0.2.5 - Modular project generator with template system`; `v0.2.5` is not present as a Git tag. |
 | Stable Sprint 6 baseline | Tag `v0.6.0` points to commit `78c9924`, `Sprint 6 Stable`. |
+| Stable v1.0 release | Tag `v1.0.0` points to merge commit `0257417`; the GitHub stable Release exists. |
 
 | Milestone | Confirmed outcome |
 | --- | --- |
@@ -340,14 +342,28 @@ CPython 3.12-3.14 CI passed. Native Windows 11 25H2, fresh artifacts, isolated
 wheel installation, installed CLI, and installed-wheel project generation also
 passed. Windows 10 was not directly tested, and no PyPI publication occurred.
 
-## In progress — Sprint 12.7 Final v1.0.0 Promotion
+## Completed — Sprint 12.7 Final v1.0.0 Promotion
 
 Sprint 12.7 promotes the validated RC to final version source `1.0.0` without
 new product behavior. Fresh final artifacts, isolated installation, installed
 CLI checks, and native Windows 11 25H2 installed-wheel project generation pass
-locally; PR CI remains pending. The final `v1.0.0` tag and GitHub Release do not
-yet exist, and PyPI publication remains a separate decision. Windows 10 has not
-been directly tested.
+locally. The final `v1.0.0` tag and GitHub Release now exist; PyPI publication
+remains separate. Windows 10 has not been directly tested.
+
+## In progress — Sprint 12.8 PyPI Trusted Publishing
+
+Sprint 12.8 prepares the first PyPI publication under distribution name
+`forgepy-cli` without changing the ForgePy application brand, `forgepy` console
+command, Python packages, or canonical `1.0.0` version. Current package URLs use
+`rzou89/ForgePy`.
+
+The repository publishing workflow uses separate build and publish jobs, passes
+fresh wheel and sdist files through a workflow artifact, and uses GitHub OIDC
+Trusted Publishing with the official PyPA action. The pending publisher is
+bound to `rzou89/ForgePy`, `publish.yml`, and GitHub environment `pypi`.
+Publishing can occur for a newly published GitHub Release; a deliberate manual
+dispatch supports the first upload because the existing v1.0.0 Release event
+predates the workflow. No PyPI upload is claimed.
 
 ## Planned — Stabilization Toward v1.0
 

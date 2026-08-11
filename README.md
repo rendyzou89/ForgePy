@@ -18,6 +18,16 @@ Repository CI tests ForgePy on GitHub-hosted `windows-latest` runners using CPyt
 
 ## Installation
 
+ForgePy is prepared for PyPI publication under the distribution name
+`forgepy-cli`. After that first publication, install it with:
+
+```powershell
+python -m pip install forgepy-cli
+```
+
+The PyPI upload is still pending. Until it is completed, install from source as
+described below or use the existing GitHub v1.0.0 release artifacts.
+
 From a ForgePy source checkout, install the command with:
 
 ```powershell
@@ -133,9 +143,10 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for repository workflow and review expect
 
 ## Current Status
 
-ForgePy 1.0.0 is prepared for final release. The source version is final, but
-the final Git tag and GitHub Release have not yet been created, and ForgePy is
-not currently published on PyPI.
+ForgePy v1.0.0 is the current stable Git tag and GitHub Release. The application
+and command remain named ForgePy and `forgepy`; only the prepared PyPI
+distribution name is `forgepy-cli`. Trusted Publishing is configured in the
+repository, but the first PyPI upload has not occurred.
 
 ## License
 
